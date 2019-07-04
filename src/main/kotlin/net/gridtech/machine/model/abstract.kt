@@ -6,9 +6,7 @@ import net.gridtech.core.data.*
 import net.gridtech.core.util.generateId
 
 abstract class IData<T : IBaseData>(initData: T, observable: Observable<Triple<ChangedType, String, T?>>) {
-
     lateinit var data: T
-
     val updatePublisher = Observable.concat(
             Observable.just(initData),
             observable.filter { it.first == ChangedType.UPDATE && it.second == initData.id }.map { it.third!! }
@@ -21,10 +19,12 @@ abstract class IData<T : IBaseData>(initData: T, observable: Observable<Triple<C
     fun start() {
         updatePublisher.subscribe {
             data = it
+            println("====${javaClass.simpleName} Updated (${data.id}) ====")
         }
         deletePublisher.subscribe {
             updateDisposable?.dispose()
             deleteDisposable?.dispose()
+            System.err.println("====${javaClass.simpleName} Removed (${data.id}) ====")
         }
         updateDisposable = updatePublisher.connect()
         deleteDisposable = deletePublisher.connect()
@@ -69,6 +69,11 @@ abstract class IEntityClass(initData: INodeClass) : IData<INodeClass>(initData, 
     fun updateDescription(description: Any?) {
         update(data.name, data.alias, description)
     }
+
+    fun delete() {
+        DataHolder.instance.manager?.nodeClassDelete(data.id)
+    }
+
 }
 
 abstract class IEntityField(initData: IField) : IData<IField>(initData, DataHolder.instance.fieldPublisher) {

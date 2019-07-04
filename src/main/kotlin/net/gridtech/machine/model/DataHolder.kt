@@ -33,6 +33,7 @@ class DataHolder(bootstrap: Bootstrap,val domain:String, val manager: IManager? 
                         this.onDelete { toDelete ->
                             entityClassHolder.remove(toDelete.id)
                         }
+                        this.start()
                     }
                 }
 
