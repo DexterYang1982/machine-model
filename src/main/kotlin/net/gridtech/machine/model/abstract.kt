@@ -3,6 +3,7 @@ package net.gridtech.machine.model
 import io.reactivex.Observable
 import io.reactivex.disposables.Disposable
 import net.gridtech.core.data.*
+import net.gridtech.core.util.APIExceptionEnum
 import net.gridtech.core.util.generateId
 
 abstract class IData<T : IBaseData>(initData: T, observable: Observable<Triple<ChangedType, String, T?>>) {
@@ -77,9 +78,53 @@ abstract class IEntityClass(initData: INodeClass) : IData<INodeClass>(initData, 
 }
 
 abstract class IEntityField(initData: IField) : IData<IField>(initData, DataHolder.instance.fieldPublisher) {
+    abstract fun getDescription(): Any?
+    private fun update(name: String, alias: String, description: Any?) {
+        DataHolder.instance.manager?.fieldUpdate(
+                id = data.id,
+                name = name,
+                alias = alias,
+                description = description
+        )
+    }
+
+    fun updateNameAndAlias(name: String, alias: String) {
+        update(name, alias, getDescription())
+    }
+
+    fun updateDescription(description: Any?) {
+        update(data.name, data.alias, description)
+    }
+
+    fun delete() {
+        APIExceptionEnum.ERR10_CAN_NOT_BE_DELETED.assert(DataHolder.instance.checkDependency(data.id))
+        DataHolder.instance.manager?.fieldDelete(data.id)
+    }
 }
 
 abstract class IEntity(initData: INode) : IData<INode>(initData, DataHolder.instance.nodePublisher) {
+    abstract fun getDescription(): Any?
+    private fun update(name: String, alias: String, description: Any?) {
+        DataHolder.instance.manager?.nodeUpdate(
+                id = data.id,
+                name = name,
+                alias = alias,
+                description = description
+        )
+    }
+
+    fun updateNameAndAlias(name: String, alias: String) {
+        update(name, alias, getDescription())
+    }
+
+    fun updateDescription(description: Any?) {
+        update(data.name, data.alias, description)
+    }
+
+    fun delete() {
+        APIExceptionEnum.ERR10_CAN_NOT_BE_DELETED.assert(DataHolder.instance.checkDependency(data.id))
+        DataHolder.instance.manager?.nodeDelete(data.id)
+    }
 }
 
 abstract class IEntityFieldValue(initData: IFieldValue) : IData<IFieldValue>(initData, DataHolder.instance.fieldValuePublisher) {
@@ -91,12 +136,16 @@ abstract class IProperty<T, U : IBaseData>(
         castFunction: (raw: U) -> T) {
     lateinit var data: U
     var current: T? = null
+    open fun deleteOldDependency() {}
+    open fun addNewDependency() {}
     private val dataChangedPublisher = updatePublisher
             .map {
                 data = it
                 val update = castFunction(data)
                 if (current != update) {
+                    deleteOldDependency()
                     current = update
+                    addNewDependency()
                     true
                 } else false
             }
@@ -113,4 +162,9 @@ abstract class IProperty<T, U : IBaseData>(
             current?.let { Observable.just(it) } ?: Observable.empty<T>(),
             dataChangedPublisher
     )
+}
+
+interface IDependOnOthers {
+    fun id(): String
+    fun dependence(): List<String>
 }

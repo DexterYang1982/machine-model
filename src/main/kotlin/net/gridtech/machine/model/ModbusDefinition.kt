@@ -1,6 +1,7 @@
 package net.gridtech.machine.model
 
 import net.gridtech.core.data.INodeClass
+import net.gridtech.core.util.APIExceptionEnum
 import net.gridtech.core.util.generateId
 import net.gridtech.core.util.parse
 
@@ -13,6 +14,16 @@ class ModbusDefinitionProperty(private val modbusUnitClass: ModbusUnitClass) : I
 ) {
     companion object {
         fun create() = ModbusDefinition.empty()
+    }
+
+    override fun deleteOldDependency() {
+        current?.read?.forEach { DataHolder.instance.deleteDependency(it.id) }
+        current?.write?.forEach { DataHolder.instance.deleteDependency(it.id) }
+    }
+
+    override fun addNewDependency() {
+        current?.read?.forEach { DataHolder.instance.addDependency(it) }
+        current?.write?.forEach { DataHolder.instance.addDependency(it) }
     }
 
     fun addReadPoint(readPoint: ReadPoint) {
@@ -42,6 +53,7 @@ class ModbusDefinitionProperty(private val modbusUnitClass: ModbusUnitClass) : I
     }
 
     fun deleteReadPoint(id: String) {
+        APIExceptionEnum.ERR10_CAN_NOT_BE_DELETED.assert(DataHolder.instance.checkDependency(id))
         if (current?.read?.find { it.id == id } != null) {
             val newReadPoints = current?.read?.filter { it.id != id }
             newReadPoints?.let {
@@ -81,6 +93,7 @@ class ModbusDefinitionProperty(private val modbusUnitClass: ModbusUnitClass) : I
     }
 
     fun deleteWritePoint(id: String) {
+        APIExceptionEnum.ERR10_CAN_NOT_BE_DELETED.assert(DataHolder.instance.checkDependency(id))
         if (current?.write?.find { it.id == id } != null) {
             val newWritePoints = current?.write?.filter { it.id != id }
             newWritePoints?.let {
@@ -109,7 +122,10 @@ data class ReadPoint(
         var point: Point,
         var resultFieldId: String,
         var sessionFollowWritePointKeys: List<String>
-)
+) : IDependOnOthers {
+    override fun id(): String = id
+    override fun dependence(): List<String> = listOf(resultFieldId)
+}
 
 data class WritePoint(
         var id: String,
@@ -119,7 +135,10 @@ data class WritePoint(
         var commandFieldId: String,
         var resultFieldId: String,
         var commandType: CommandType
-)
+) : IDependOnOthers {
+    override fun id(): String = id
+    override fun dependence(): List<String> = listOf(commandFieldId, resultFieldId)
+}
 
 
 data class Point(

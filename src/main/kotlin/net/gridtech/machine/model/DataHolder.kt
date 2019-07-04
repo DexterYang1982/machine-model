@@ -3,7 +3,7 @@ package net.gridtech.machine.model
 import net.gridtech.core.Bootstrap
 import net.gridtech.core.data.*
 
-class DataHolder(bootstrap: Bootstrap,val domain:String, val manager: IManager? = null) {
+class DataHolder(bootstrap: Bootstrap, val domain: String, val manager: IManager? = null) {
     val nodeClassPublisher = bootstrap.dataPublisher<INodeClass>(bootstrap.nodeClassService.serviceName)
     val fieldPublisher = bootstrap.dataPublisher<IField>(bootstrap.fieldService.serviceName)
     val nodePublisher = bootstrap.dataPublisher<INode>(bootstrap.nodeService.serviceName)
@@ -13,6 +13,8 @@ class DataHolder(bootstrap: Bootstrap,val domain:String, val manager: IManager? 
     val entityFieldHolder = HashMap<String, IEntityField>()
     val entityHolder = HashMap<String, IEntity>()
     val entityFieldValueHolder = HashMap<String, IEntityFieldValue>()
+
+    private val dependencyMap = HashMap<String, List<String>>()
 
     companion object {
         lateinit var instance: DataHolder
@@ -42,4 +44,14 @@ class DataHolder(bootstrap: Bootstrap,val domain:String, val manager: IManager? 
         nodePublisher.connect()
         fieldValuePublisher.connect()
     }
+
+    fun addDependency(dependOnOthers: IDependOnOthers) {
+        dependencyMap[dependOnOthers.id()] = dependOnOthers.dependence()
+    }
+
+    fun deleteDependency(id: String) = dependencyMap.remove(id)
+
+    fun checkDependency(id: String) =
+            dependencyMap.values.find { it.contains(id) } == null
+
 }
