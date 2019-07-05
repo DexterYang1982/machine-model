@@ -1,9 +1,13 @@
-package net.gridtech.machine.model
+package net.gridtech.machine.model.property
 
 import net.gridtech.core.data.INodeClass
 import net.gridtech.core.util.APIExceptionEnum
 import net.gridtech.core.util.generateId
 import net.gridtech.core.util.parse
+import net.gridtech.machine.model.DataHolder
+import net.gridtech.machine.model.IDependOnOthers
+import net.gridtech.machine.model.IProperty
+import net.gridtech.machine.model.entityClass.ModbusUnitClass
 
 class ModbusDefinitionProperty(private val modbusUnitClass: ModbusUnitClass) : IProperty<ModbusDefinition, INodeClass>(
         modbusUnitClass.updatePublisher,

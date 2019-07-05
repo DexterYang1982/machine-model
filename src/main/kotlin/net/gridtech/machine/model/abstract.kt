@@ -37,13 +37,13 @@ abstract class IData<T : IBaseData>(initData: T, observable: Observable<Triple<C
 }
 
 abstract class IEntityClass(initData: INodeClass) : IData<INodeClass>(initData, DataHolder.instance.nodeClassPublisher) {
-    abstract fun getDescription(): Any?
+    open fun getDescription(): Any? = null
 
     companion object {
-        fun create(name: String, alias: String, connectable: Boolean, tags: List<String>, description: Any?) {
+        fun add(name: String, alias: String, connectable: Boolean, tags: List<String>, description: Any?): INodeClass? {
             val nodeClassTags = tags.toMutableList()
-            nodeClassTags.add(DataHolder.instance.domain)
-            DataHolder.instance.manager?.nodeClassAdd(
+            nodeClassTags.add(DataHolder.instance.domainNodeId)
+            return DataHolder.instance.manager?.nodeClassAdd(
                     id = generateId(),
                     name = name,
                     alias = alias,
@@ -78,7 +78,24 @@ abstract class IEntityClass(initData: INodeClass) : IData<INodeClass>(initData, 
 }
 
 abstract class IEntityField(initData: IField) : IData<IField>(initData, DataHolder.instance.fieldPublisher) {
-    abstract fun getDescription(): Any?
+    open fun getDescription(): Any? = null
+
+    companion object {
+        fun add(key: String, nodeClassId: String, name: String, alias: String, tags: List<String>, through: Boolean, description: Any?): IField? {
+            val fieldTags = tags.toMutableList()
+            fieldTags.add(DataHolder.instance.domainNodeId)
+            return DataHolder.instance.manager?.fieldAdd(
+                    key = key,
+                    nodeClassId = nodeClassId,
+                    name = name,
+                    alias = alias,
+                    through = through,
+                    tags = fieldTags,
+                    description = description
+            )
+        }
+    }
+
     private fun update(name: String, alias: String, description: Any?) {
         DataHolder.instance.manager?.fieldUpdate(
                 id = data.id,
@@ -103,7 +120,29 @@ abstract class IEntityField(initData: IField) : IData<IField>(initData, DataHold
 }
 
 abstract class IEntity(initData: INode) : IData<INode>(initData, DataHolder.instance.nodePublisher) {
-    abstract fun getDescription(): Any?
+    open fun getDescription(): Any? = null
+
+    companion object {
+        fun add(id: String, parentId: String, nodeClassId: String, name: String, alias: String, tags: List<String>,
+                externalNodeIdScope: List<String>,
+                externalNodeClassTagScope: List<String>,
+                description: Any?): INode? {
+            val nodeTags = tags.toMutableList()
+            nodeTags.add(DataHolder.instance.domainNodeId)
+            return DataHolder.instance.manager?.nodeAdd(
+                    id = id,
+                    nodeClassId = nodeClassId,
+                    name = name,
+                    alias = alias,
+                    parentId = parentId,
+                    externalNodeIdScope = externalNodeIdScope,
+                    externalNodeClassTagScope = externalNodeClassTagScope,
+                    tags = nodeTags,
+                    description = description
+            )
+        }
+    }
+
     private fun update(name: String, alias: String, description: Any?) {
         DataHolder.instance.manager?.nodeUpdate(
                 id = data.id,
