@@ -1,6 +1,8 @@
 package net.gridtech.machine.model
 
 import io.reactivex.Observable
+import io.reactivex.ObservableEmitter
+import io.reactivex.ObservableOnSubscribe
 import io.reactivex.disposables.Disposable
 import net.gridtech.core.data.*
 import net.gridtech.core.util.APIExceptionEnum
@@ -42,7 +44,7 @@ abstract class IEntityClass(initData: INodeClass) : IData<INodeClass>(initData, 
     companion object {
         fun add(name: String, alias: String, connectable: Boolean, tags: List<String>, description: Any?): INodeClass? {
             val nodeClassTags = tags.toMutableList()
-            nodeClassTags.add(DataHolder.instance.domainNodeId)
+            nodeClassTags.add(DataHolder.instance.domainNodeId ?: "")
             return DataHolder.instance.manager?.nodeClassAdd(
                     id = generateId(),
                     name = name,
@@ -83,7 +85,7 @@ abstract class IEntityField(initData: IField) : IData<IField>(initData, DataHold
     companion object {
         fun add(key: String, nodeClassId: String, name: String, alias: String, tags: List<String>, through: Boolean, description: Any?): IField? {
             val fieldTags = tags.toMutableList()
-            fieldTags.add(DataHolder.instance.domainNodeId)
+            fieldTags.add(DataHolder.instance.domainNodeId ?: "")
             return DataHolder.instance.manager?.fieldAdd(
                     key = key,
                     nodeClassId = nodeClassId,
@@ -128,7 +130,7 @@ abstract class IEntity(initData: INode) : IData<INode>(initData, DataHolder.inst
                 externalNodeClassTagScope: List<String>,
                 description: Any?): INode? {
             val nodeTags = tags.toMutableList()
-            nodeTags.add(DataHolder.instance.domainNodeId)
+            nodeTags.add(DataHolder.instance.domainNodeId ?: "")
             return DataHolder.instance.manager?.nodeAdd(
                     id = id,
                     nodeClassId = nodeClassId,
@@ -167,6 +169,54 @@ abstract class IEntity(initData: INode) : IData<INode>(initData, DataHolder.inst
 }
 
 abstract class IEntityFieldValue(initData: IFieldValue) : IData<IFieldValue>(initData, DataHolder.instance.fieldValuePublisher) {
+}
+
+abstract class IBaseProperty<T, U : IBaseData>(val castFunction: (raw: U) -> T) : ObservableOnSubscribe<T> {
+    private var emitters = mutableListOf<ObservableEmitter<T>>()
+    var value: T? = null
+    val observable: Observable<T>
+        get() = Observable.create(this).doFinally {
+            emitters = emitters.filter { !it.isDisposed }.toMutableList()
+        }
+    var source: U? = null
+        set(value) {
+            field = value
+            field?.apply {
+                parse(this)
+            }
+        }
+
+    private fun parse(u: U) {
+        val casted = castFunction(u)
+        if (value != casted) {
+            value = casted
+            publish(casted)
+        }
+    }
+
+    private fun publish(c: T) {
+        if (emitters.isNotEmpty()) {
+            emitters.forEach {
+                if (!it.isDisposed)
+                    it.onNext(c)
+            }
+        }
+    }
+
+    override fun subscribe(emitter: ObservableEmitter<T>) {
+        value?.apply {
+            emitter.onNext(this)
+        }
+        emitters.add(emitter)
+    }
+
+    fun delete() {
+        emitters.forEach {
+            if (!it.isDisposed)
+                it.onComplete()
+        }
+        emitters.clear()
+    }
 }
 
 abstract class IProperty<T, U : IBaseData>(

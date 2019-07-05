@@ -3,12 +3,16 @@ package net.gridtech.machine.model
 import io.reactivex.observables.ConnectableObservable
 import net.gridtech.core.Bootstrap
 import net.gridtech.core.data.*
+import net.gridtech.machine.model.entity.Domain
 import net.gridtech.machine.model.entity.Machine
+import net.gridtech.machine.model.entity.Root
+import net.gridtech.machine.model.entityClass.DomainClass
 import net.gridtech.machine.model.entityClass.MachineClass
 import net.gridtech.machine.model.entityClass.ModbusUnitClass
+import net.gridtech.machine.model.entityClass.RootClass
 import net.gridtech.machine.model.entityField.CustomField
 
-class DataHolder(bootstrap: Bootstrap, val domainNodeId: String, val manager: IManager? = null) {
+class DataHolder(bootstrap: Bootstrap, val domainNodeId: String? = null, val domainNodeClassId: String? = null, val manager: IManager? = null) {
     val nodeClassPublisher = bootstrap.dataPublisher<INodeClass>(bootstrap.nodeClassService.serviceName)
     val fieldPublisher = bootstrap.dataPublisher<IField>(bootstrap.fieldService.serviceName)
     val nodePublisher = bootstrap.dataPublisher<INode>(bootstrap.nodeService.serviceName)
@@ -106,7 +110,9 @@ class DataHolder(bootstrap: Bootstrap, val domainNodeId: String, val manager: IM
 
 
     private fun createEntityClass(nodeClass: INodeClass): IEntityClass? =
-            MachineClass.create(nodeClass)
+            RootClass.create(nodeClass)
+                    ?: DomainClass.create(nodeClass)
+                    ?: MachineClass.create(nodeClass)
                     ?: ModbusUnitClass.create(nodeClass)
 
     private fun createEntityField(field: IField): IEntityField? =
@@ -114,6 +120,8 @@ class DataHolder(bootstrap: Bootstrap, val domainNodeId: String, val manager: IM
 
 
     private fun createEntity(node: INode): IEntity? =
-            Machine.create(node)
+            Root.create(node)
+                    ?: Domain.create(node)
+                    ?: Machine.create(node)
 
 }
