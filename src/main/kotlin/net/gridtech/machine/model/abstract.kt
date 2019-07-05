@@ -171,9 +171,9 @@ abstract class IEntity(initData: INode) : IData<INode>(initData, DataHolder.inst
 abstract class IEntityFieldValue(initData: IFieldValue) : IData<IFieldValue>(initData, DataHolder.instance.fieldValuePublisher) {
 }
 
-abstract class IBaseProperty<T, U : IBaseData>(val castFunction: (raw: U) -> T) : ObservableOnSubscribe<T> {
+abstract class IBaseProperty<T, U : IBaseData>(val castFunction: (raw: U) -> T, initValue: T? = null) : ObservableOnSubscribe<T> {
     private var emitters = mutableListOf<ObservableEmitter<T>>()
-    var value: T? = null
+    var value: T? = initValue
     val observable: Observable<T>
         get() = Observable.create(this).doFinally {
             emitters = emitters.filter { !it.isDisposed }.toMutableList()
@@ -182,11 +182,16 @@ abstract class IBaseProperty<T, U : IBaseData>(val castFunction: (raw: U) -> T) 
         set(value) {
             field = value
             field?.apply {
-                parse(this)
+                sourceUpdated(this)
+                parseValue(this)
             }
         }
 
-    private fun parse(u: U) {
+    protected open fun sourceUpdated(s: U) {
+
+    }
+
+    private fun parseValue(u: U) {
         val casted = castFunction(u)
         if (value != casted) {
             value = casted
