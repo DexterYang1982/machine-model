@@ -14,11 +14,11 @@ class Machine(node: INode) : IEntity(node) {
                 else
                     null
 
-        fun add(machineClass: MachineClass,parentId:String, name: String, alias: String) =
+        fun add(machineClass: MachineClass, parentId: String, name: String, alias: String) =
                 add(
                         id = generateId(),
                         parentId = parentId,
-                        nodeClassId = machineClass.data.id,
+                        nodeClassId = machineClass.source.id,
                         name = name,
                         alias = alias,
                         tags = tags,

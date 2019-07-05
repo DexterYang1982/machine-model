@@ -1,6 +1,5 @@
 package net.gridtech.machine.model
 
-import io.reactivex.observables.ConnectableObservable
 import net.gridtech.core.Bootstrap
 import net.gridtech.core.data.*
 import net.gridtech.machine.model.entity.Domain
@@ -13,72 +12,9 @@ import net.gridtech.machine.model.entityClass.RootClass
 import net.gridtech.machine.model.entityField.CustomField
 
 class DataHolder(bootstrap: Bootstrap, val domainNodeId: String? = null, val domainNodeClassId: String? = null, val manager: IManager? = null) {
-    val nodeClassPublisher = bootstrap.dataPublisher<INodeClass>(bootstrap.nodeClassService.serviceName)
-    val fieldPublisher = bootstrap.dataPublisher<IField>(bootstrap.fieldService.serviceName)
-    val nodePublisher = bootstrap.dataPublisher<INode>(bootstrap.nodeService.serviceName)
-    val fieldValuePublisher = bootstrap.dataPublisher<IFieldValue>(bootstrap.fieldValueService.serviceName)
-
     val entityClassHolder = HashMap<String, IEntityClass>()
     val entityFieldHolder = HashMap<String, IEntityField>()
     val entityHolder = HashMap<String, IEntity>()
-    val entityFieldValueHolder = HashMap<String, IEntityFieldValue>()
-
-    val entityClassAddedPublisher: ConnectableObservable<out IEntityClass> =
-            nodeClassPublisher
-                    .filter { !entityClassHolder.containsKey(it.second) && it.first == ChangedType.UPDATE }
-                    .map {
-                        val nodeClass = it.third!!
-                        val entityClassAdded = createEntityClass(nodeClass)
-                        entityClassAdded?.apply {
-                            entityClassHolder[nodeClass.id] = this
-                            this.onDelete { toDelete ->
-                                entityClassHolder.remove(toDelete.id)
-                            }
-                            this.start()
-                        }
-                        (entityClassAdded to (entityClassAdded != null))
-                    }
-                    .filter { it.second }
-                    .map { it.first!! }
-                    .publish()
-    val entityFieldAddedPublisher: ConnectableObservable<out IEntityField> =
-            fieldPublisher
-                    .filter { !entityFieldHolder.containsKey(it.second) && it.first == ChangedType.UPDATE }
-                    .map {
-                        val field = it.third!!
-                        val entityFieldAdded = createEntityField(field)
-                        entityFieldAdded?.apply {
-                            entityFieldHolder[field.id] = this
-                            this.onDelete { toDelete ->
-                                entityFieldHolder.remove(toDelete.id)
-                            }
-                            this.start()
-                        }
-                        (entityFieldAdded to (entityFieldAdded != null))
-                    }
-                    .filter { it.second }
-                    .map { it.first!! }
-                    .publish()
-
-    val entityAddedPublisher: ConnectableObservable<out IEntity> =
-            nodePublisher
-                    .filter { !entityHolder.containsKey(it.second) && it.first == ChangedType.UPDATE }
-                    .map {
-                        val node = it.third!!
-                        val entityAdded = createEntity(node)
-                        entityAdded?.apply {
-                            entityHolder[node.id] = this
-                            this.onDelete { toDelete ->
-                                entityHolder.remove(toDelete.id)
-                            }
-                            this.start()
-                        }
-                        (entityAdded to (entityAdded != null))
-                    }
-                    .filter { it.second }
-                    .map { it.first!! }
-                    .publish()
-
 
     private val dependencyMap = HashMap<String, List<String>>()
 
@@ -88,15 +24,60 @@ class DataHolder(bootstrap: Bootstrap, val domainNodeId: String? = null, val dom
 
     init {
         instance = this
-
-        entityClassAddedPublisher.connect()
-        entityFieldAddedPublisher.connect()
-        entityAddedPublisher.connect()
-
-        nodeClassPublisher.connect()
-        fieldPublisher.connect()
-        nodePublisher.connect()
-        fieldValuePublisher.connect()
+        bootstrap.dataPublisher<INodeClass>(bootstrap.nodeClassService.serviceName)
+                .subscribe {
+                    when (it.first) {
+                        ChangedType.UPDATE -> {
+                            val nodeClass = it.third!!
+                            if (entityClassHolder.containsKey(it.second)) {
+                                entityClassHolder[it.second]!!.source = nodeClass
+                            } else {
+                                createEntityClass(nodeClass)?.apply {
+                                    entityClassHolder[nodeClass.id] = this
+                                }
+                            }
+                        }
+                        ChangedType.DELETE -> {
+                            entityClassHolder.remove(it.second)?.onDelete()
+                        }
+                    }
+                }
+        bootstrap.dataPublisher<IField>(bootstrap.fieldService.serviceName)
+                .subscribe {
+                    when (it.first) {
+                        ChangedType.UPDATE -> {
+                            val field = it.third!!
+                            if (entityFieldHolder.containsKey(it.second)) {
+                                entityFieldHolder[it.second]!!.source = field
+                            } else {
+                                createEntityField(field)?.apply {
+                                    entityFieldHolder[field.id] = this
+                                }
+                            }
+                        }
+                        ChangedType.DELETE -> {
+                            entityFieldHolder.remove(it.second)?.onDelete()
+                        }
+                    }
+                }
+        bootstrap.dataPublisher<INode>(bootstrap.nodeService.serviceName)
+                .subscribe {
+                    when (it.first) {
+                        ChangedType.UPDATE -> {
+                            val node = it.third!!
+                            if (entityHolder.containsKey(it.second)) {
+                                entityHolder[it.second]!!.source = node
+                            } else {
+                                createEntity(node)?.apply {
+                                    entityHolder[node.id] = this
+                                }
+                            }
+                        }
+                        ChangedType.DELETE -> {
+                            entityHolder.remove(it.second)?.onDelete()
+                        }
+                    }
+                }
     }
 
     fun addDependency(dependOnOthers: IDependOnOthers) {

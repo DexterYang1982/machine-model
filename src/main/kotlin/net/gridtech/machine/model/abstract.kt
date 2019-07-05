@@ -3,44 +3,42 @@ package net.gridtech.machine.model
 import io.reactivex.Observable
 import io.reactivex.ObservableEmitter
 import io.reactivex.ObservableOnSubscribe
-import io.reactivex.disposables.Disposable
 import net.gridtech.core.data.*
 import net.gridtech.core.util.APIExceptionEnum
 import net.gridtech.core.util.generateId
 
-abstract class IData<T : IBaseData>(initData: T, observable: Observable<Triple<ChangedType, String, T?>>) {
-    lateinit var data: T
-    val updatePublisher = Observable.concat(
-            Observable.just(initData),
-            observable.filter { it.first == ChangedType.UPDATE && it.second == initData.id }.map { it.third!! }
-    ).publish()
+abstract class IBaseStructure<T : IStructureData>(initData: T) {
+    open fun getDescriptionProperty(): IBaseProperty<*, T>? = null
+    val name = object : IBaseProperty<String, IStructureData>({ structure ->
+        structure.name
+    }) {}
+    val alias = object : IBaseProperty<String, IStructureData>({ structure ->
+        structure.alias
+    }) {}
 
-    val deletePublisher = observable.filter { it.first == ChangedType.DELETE && it.second == initData.id }.publish()
-    private var updateDisposable: Disposable? = null
-    private var deleteDisposable: Disposable? = null
+    var source: T = initData
+        set(value) {
+            field = value
+            name.source = value
+            alias.source = value
+            getDescriptionProperty()?.source = value
+        }
 
-    fun start() {
-        updatePublisher.subscribe {
-            data = it
-            println("====${javaClass.simpleName} Updated (${data.id}) ====")
-        }
-        deletePublisher.subscribe {
-            updateDisposable?.dispose()
-            deleteDisposable?.dispose()
-            System.err.println("====${javaClass.simpleName} Removed (${data.id}) ====")
-        }
-        updateDisposable = updatePublisher.connect()
-        deleteDisposable = deletePublisher.connect()
+
+    init {
+        println("+++ ${javaClass.simpleName} created id=$source.id")
     }
 
-    fun onDelete(cleanUpFunction: (data: T) -> Unit) {
-        deletePublisher.doOnNext { cleanUpFunction(data) }
+
+    fun onDelete() {
+        println("--- ${javaClass.simpleName} deleted id=$source.id")
+        name.onDelete()
+        alias.onDelete()
+        getDescriptionProperty()?.onDelete()
     }
 }
 
-abstract class IEntityClass(initData: INodeClass) : IData<INodeClass>(initData, DataHolder.instance.nodeClassPublisher) {
-    open fun getDescription(): Any? = null
-
+abstract class IEntityClass(initData: INodeClass) : IBaseStructure<INodeClass>(initData) {
     companion object {
         fun add(name: String, alias: String, connectable: Boolean, tags: List<String>, description: Any?): INodeClass? {
             val nodeClassTags = tags.toMutableList()
@@ -58,7 +56,7 @@ abstract class IEntityClass(initData: INodeClass) : IData<INodeClass>(initData, 
 
     private fun update(name: String, alias: String, description: Any?) {
         DataHolder.instance.manager?.nodeClassUpdate(
-                id = data.id,
+                id = source.id,
                 name = name,
                 alias = alias,
                 description = description
@@ -66,22 +64,20 @@ abstract class IEntityClass(initData: INodeClass) : IData<INodeClass>(initData, 
     }
 
     fun updateNameAndAlias(name: String, alias: String) {
-        update(name, alias, getDescription())
+        update(name, alias, getDescriptionProperty()?.value)
     }
 
     fun updateDescription(description: Any?) {
-        update(data.name, data.alias, description)
+        update(source.name, source.alias, description)
     }
 
     fun delete() {
-        DataHolder.instance.manager?.nodeClassDelete(data.id)
+        DataHolder.instance.manager?.nodeClassDelete(source.id)
     }
 
 }
 
-abstract class IEntityField(initData: IField) : IData<IField>(initData, DataHolder.instance.fieldPublisher) {
-    open fun getDescription(): Any? = null
-
+abstract class IEntityField(initData: IField) : IBaseStructure<IField>(initData) {
     companion object {
         fun add(key: String, nodeClassId: String, name: String, alias: String, tags: List<String>, through: Boolean, description: Any?): IField? {
             val fieldTags = tags.toMutableList()
@@ -100,7 +96,7 @@ abstract class IEntityField(initData: IField) : IData<IField>(initData, DataHold
 
     private fun update(name: String, alias: String, description: Any?) {
         DataHolder.instance.manager?.fieldUpdate(
-                id = data.id,
+                id = source.id,
                 name = name,
                 alias = alias,
                 description = description
@@ -108,22 +104,20 @@ abstract class IEntityField(initData: IField) : IData<IField>(initData, DataHold
     }
 
     fun updateNameAndAlias(name: String, alias: String) {
-        update(name, alias, getDescription())
+        update(name, alias, getDescriptionProperty()?.value)
     }
 
     fun updateDescription(description: Any?) {
-        update(data.name, data.alias, description)
+        update(source.name, source.alias, description)
     }
 
     fun delete() {
-        APIExceptionEnum.ERR10_CAN_NOT_BE_DELETED.assert(DataHolder.instance.checkDependency(data.id))
-        DataHolder.instance.manager?.fieldDelete(data.id)
+        APIExceptionEnum.ERR10_CAN_NOT_BE_DELETED.assert(DataHolder.instance.checkDependency(source.id))
+        DataHolder.instance.manager?.fieldDelete(source.id)
     }
 }
 
-abstract class IEntity(initData: INode) : IData<INode>(initData, DataHolder.instance.nodePublisher) {
-    open fun getDescription(): Any? = null
-
+abstract class IEntity(initData: INode) : IBaseStructure<INode>(initData) {
     companion object {
         fun add(id: String, parentId: String, nodeClassId: String, name: String, alias: String, tags: List<String>,
                 externalNodeIdScope: List<String>,
@@ -147,7 +141,7 @@ abstract class IEntity(initData: INode) : IData<INode>(initData, DataHolder.inst
 
     private fun update(name: String, alias: String, description: Any?) {
         DataHolder.instance.manager?.nodeUpdate(
-                id = data.id,
+                id = source.id,
                 name = name,
                 alias = alias,
                 description = description
@@ -155,25 +149,31 @@ abstract class IEntity(initData: INode) : IData<INode>(initData, DataHolder.inst
     }
 
     fun updateNameAndAlias(name: String, alias: String) {
-        update(name, alias, getDescription())
+        update(name, alias, getDescriptionProperty()?.value)
     }
 
     fun updateDescription(description: Any?) {
-        update(data.name, data.alias, description)
+        update(source.name, source.alias, description)
     }
 
     fun delete() {
-        APIExceptionEnum.ERR10_CAN_NOT_BE_DELETED.assert(DataHolder.instance.checkDependency(data.id))
-        DataHolder.instance.manager?.nodeDelete(data.id)
+        APIExceptionEnum.ERR10_CAN_NOT_BE_DELETED.assert(DataHolder.instance.checkDependency(source.id))
+        DataHolder.instance.manager?.nodeDelete(source.id)
     }
 }
 
-abstract class IEntityFieldValue(initData: IFieldValue) : IData<IFieldValue>(initData, DataHolder.instance.fieldValuePublisher) {
-}
-
-abstract class IBaseProperty<T, U : IBaseData>(val castFunction: (raw: U) -> T, initValue: T? = null) : ObservableOnSubscribe<T> {
+abstract class IBaseProperty<T, U : IBaseData>(private val castFunction: (raw: U) -> T, initValue: T? = null) : ObservableOnSubscribe<T> {
     private var emitters = mutableListOf<ObservableEmitter<T>>()
-    var value: T? = initValue
+    private var lastParseTime: Long = -1
+    private var _value: T? = initValue
+
+    val value: T?
+        get() {
+            if (source?.updateTime ?: -1 > lastParseTime) {
+                parseValue(source!!)
+            }
+            return _value
+        }
     val observable: Observable<T>
         get() = Observable.create(this).doFinally {
             emitters = emitters.filter { !it.isDisposed }.toMutableList()
@@ -181,9 +181,13 @@ abstract class IBaseProperty<T, U : IBaseData>(val castFunction: (raw: U) -> T, 
     var source: U? = null
         set(value) {
             field = value
-            field?.apply {
-                sourceUpdated(this)
-                parseValue(this)
+            if (value != null) {
+                sourceUpdated(value)
+                if (emitters.isNotEmpty()) {
+                    if (parseValue(value)) {
+                        publish(_value!!)
+                    }
+                }
             }
         }
 
@@ -191,20 +195,28 @@ abstract class IBaseProperty<T, U : IBaseData>(val castFunction: (raw: U) -> T, 
 
     }
 
-    private fun parseValue(u: U) {
-        val casted = castFunction(u)
-        if (value != casted) {
-            value = casted
-            publish(casted)
-        }
+    protected open fun deleteOldDependency() {
+
     }
 
-    private fun publish(c: T) {
-        if (emitters.isNotEmpty()) {
-            emitters.forEach {
-                if (!it.isDisposed)
-                    it.onNext(c)
-            }
+    protected open fun addNewDependency() {
+
+    }
+
+    private fun parseValue(u: U): Boolean {
+        lastParseTime = u.updateTime
+        val casted = castFunction(u)
+        return if (_value != casted) {
+            _value = casted
+            true
+        } else
+            false
+    }
+
+    protected fun publish(t: T) {
+        emitters.forEach {
+            if (!it.isDisposed)
+                it.onNext(t)
         }
     }
 
@@ -215,47 +227,13 @@ abstract class IBaseProperty<T, U : IBaseData>(val castFunction: (raw: U) -> T, 
         emitters.add(emitter)
     }
 
-    fun delete() {
+    fun onDelete() {
         emitters.forEach {
             if (!it.isDisposed)
                 it.onComplete()
         }
         emitters.clear()
     }
-}
-
-abstract class IProperty<T, U : IBaseData>(
-        updatePublisher: Observable<U>,
-        deletePublisher: Observable<*>,
-        castFunction: (raw: U) -> T) {
-    lateinit var data: U
-    var current: T? = null
-    open fun deleteOldDependency() {}
-    open fun addNewDependency() {}
-    private val dataChangedPublisher = updatePublisher
-            .map {
-                data = it
-                val update = castFunction(data)
-                if (current != update) {
-                    deleteOldDependency()
-                    current = update
-                    addNewDependency()
-                    true
-                } else false
-            }
-            .filter { it }
-            .map { current!! }
-            .publish()
-
-    init {
-        val dataChangedDisposable = dataChangedPublisher.connect()
-        deletePublisher.subscribe { dataChangedDisposable.dispose() }
-    }
-
-    fun watch() = Observable.concat(
-            current?.let { Observable.just(it) } ?: Observable.empty<T>(),
-            dataChangedPublisher
-    )
 }
 
 interface IDependOnOthers {
