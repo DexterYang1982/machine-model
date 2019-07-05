@@ -9,31 +9,33 @@ import net.gridtech.core.util.generateId
 
 abstract class IBaseStructure<T : IStructureData>(initData: T) {
     open fun getDescriptionProperty(): IBaseProperty<*, T>? = null
-    val name = object : IBaseProperty<String, IStructureData>({ structure ->
+    val nameProperty = object : IBaseProperty<String, IStructureData>({ structure ->
         structure.name
     }) {}
-    val alias = object : IBaseProperty<String, IStructureData>({ structure ->
+    val aliasProperty = object : IBaseProperty<String, IStructureData>({ structure ->
         structure.alias
     }) {}
 
     var source: T = initData
         set(value) {
             field = value
-            name.source = value
-            alias.source = value
+            nameProperty.source = value
+            aliasProperty.source = value
             getDescriptionProperty()?.source = value
+
+            System.err.println("[Update] ${javaClass.simpleName}  id=${source.id}")
         }
 
 
     init {
-        println("+++ ${javaClass.simpleName} created id=$source.id")
+        System.err.println("[Create]  ${javaClass.simpleName}  id=${source.id}")
     }
 
 
     fun onDelete() {
-        println("--- ${javaClass.simpleName} deleted id=$source.id")
-        name.onDelete()
-        alias.onDelete()
+        System.err.println("[Delete] ${javaClass.simpleName}  id=${source.id}")
+        nameProperty.onDelete()
+        aliasProperty.onDelete()
         getDescriptionProperty()?.onDelete()
     }
 }

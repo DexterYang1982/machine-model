@@ -90,19 +90,19 @@ class DataHolder(bootstrap: Bootstrap, val domainNodeId: String? = null, val dom
             dependencyMap.values.find { it.contains(id) } == null
 
 
-    private fun createEntityClass(nodeClass: INodeClass): IEntityClass? =
-            RootClass.create(nodeClass)
-                    ?: DomainClass.create(nodeClass)
-                    ?: MachineClass.create(nodeClass)
-                    ?: ModbusUnitClass.create(nodeClass)
+    private fun createEntityClass(nodeClass: INodeClass): IEntityClass? = null
+            ?: RootClass.create(nodeClass)
+            ?: DomainClass.create(nodeClass)
+            ?: MachineClass.create(nodeClass)
+            ?: ModbusUnitClass.create(nodeClass)
 
-    private fun createEntityField(field: IField): IEntityField? =
-            CustomField.create(field)
+    private fun createEntityField(field: IField): IEntityField? = null
+            ?: CustomField.create(field)
 
 
-    private fun createEntity(node: INode): IEntity? =
-            Root.create(node)
-                    ?: Domain.create(node)
-                    ?: Machine.create(node)
+    private fun createEntity(node: INode): IEntity? = null
+            ?: Root.create(node)
+            ?: Domain.create(node)
+            ?: Machine.create(node)
 
 }
