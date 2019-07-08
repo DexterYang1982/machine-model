@@ -4,8 +4,16 @@ import net.gridtech.core.data.INode
 import net.gridtech.core.util.generateId
 import net.gridtech.machine.model.IEntity
 import net.gridtech.machine.model.entityClass.MachineClass
+import net.gridtech.machine.model.entityField.RunningStatusField
+import net.gridtech.machine.model.entityField.SecretField
 
 class Machine(node: INode) : IEntity(node) {
+    val runningStatus
+        get() = getEntityField<RunningStatusField>(source.nodeClassId,RunningStatusField.key).getFieldValue(source.id)
+    val secret
+        get() = getEntityField<SecretField>(source.nodeClassId,SecretField.key).getFieldValue(source.id)
+
+
     companion object {
         private val tags = listOf("machine")
         fun create(node: INode): Machine? =

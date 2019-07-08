@@ -1,6 +1,7 @@
 package net.gridtech.machine.model.property
 
 import net.gridtech.core.data.IField
+import net.gridtech.core.data.IFieldValue
 import net.gridtech.core.util.APIExceptionEnum
 import net.gridtech.core.util.generateId
 import net.gridtech.core.util.parse
@@ -69,6 +70,15 @@ data class ValueDescription(
                 valueExp = "",
                 extra = "",
                 color = "#ffffff"
+        )
+
+        fun create(fieldValue: IFieldValue) = ValueDescription(
+                id = "",
+                name = fieldValue.value,
+                alias = "",
+                valueExp = "",
+                extra = "",
+                color = ""
         )
     }
 }

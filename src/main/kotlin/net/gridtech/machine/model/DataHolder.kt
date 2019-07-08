@@ -13,10 +13,11 @@ import net.gridtech.machine.model.entityField.CustomField
 import net.gridtech.machine.model.entityField.RunningStatusField
 import net.gridtech.machine.model.entityField.SecretField
 
-class DataHolder(bootstrap: Bootstrap, val domainNodeId: String? = null, val domainNodeClassId: String? = null, val manager: IManager? = null) {
+class DataHolder(val bootstrap: Bootstrap, val domainNodeId: String? = null, val domainNodeClassId: String? = null, val manager: IManager? = null) {
     val entityClassHolder = HashMap<String, IEntityClass>()
-    val entityFieldHolder = HashMap<String, IEntityField>()
+    val entityFieldHolder = HashMap<String, IEntityField<*>>()
     val entityHolder = HashMap<String, IEntity>()
+    val entityFieldValueHolder = HashMap<String, EntityFieldValue<*>>()
 
     private val dependencyMap = HashMap<String, List<String>>()
 
@@ -80,6 +81,17 @@ class DataHolder(bootstrap: Bootstrap, val domainNodeId: String? = null, val dom
                         }
                     }
                 }
+        bootstrap.dataPublisher<IFieldValue>(bootstrap.fieldValueService.serviceName)
+                .subscribe {
+                    when (it.first) {
+                        ChangedType.UPDATE -> {
+                            entityFieldValueHolder[it.second]?.source = it.third
+                        }
+                        ChangedType.DELETE -> {
+                            entityFieldValueHolder.remove(it.second)?.onDelete()
+                        }
+                    }
+                }
     }
 
     fun addDependency(dependOnOthers: IDependOnOthers) {
@@ -98,7 +110,7 @@ class DataHolder(bootstrap: Bootstrap, val domainNodeId: String? = null, val dom
             ?: MachineClass.create(nodeClass)
             ?: ModbusUnitClass.create(nodeClass)
 
-    private fun createEntityField(field: IField): IEntityField? = null
+    private fun createEntityField(field: IField): IEntityField<*>? = null
             ?: CustomField.create(field)
             ?: RunningStatusField.create(field)
             ?: SecretField.create(field)

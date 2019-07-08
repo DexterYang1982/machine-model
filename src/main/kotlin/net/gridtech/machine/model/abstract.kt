@@ -4,8 +4,9 @@ import io.reactivex.Observable
 import io.reactivex.ObservableEmitter
 import io.reactivex.ObservableOnSubscribe
 import net.gridtech.core.data.*
-import net.gridtech.core.util.APIExceptionEnum
-import net.gridtech.core.util.generateId
+import net.gridtech.core.util.*
+import net.gridtech.machine.model.entityField.CustomField
+import net.gridtech.machine.model.property.ValueDescription
 
 abstract class IBaseStructure<T : IStructureData>(initData: T) {
     open fun getDescriptionProperty(): IBaseProperty<*, T>? = null
@@ -79,7 +80,7 @@ abstract class IEntityClass(initData: INodeClass) : IBaseStructure<INodeClass>(i
 
 }
 
-abstract class IEntityField(initData: IField) : IBaseStructure<IField>(initData) {
+abstract class IEntityField<T>(initData: IField) : IBaseStructure<IField>(initData) {
     companion object {
         fun add(key: String, nodeClassId: String, name: String, alias: String, tags: List<String>, through: Boolean, description: Any?): IField? {
             val fieldTags = tags.toMutableList()
@@ -95,6 +96,18 @@ abstract class IEntityField(initData: IField) : IBaseStructure<IField>(initData)
             )
         }
     }
+
+    abstract fun createFieldValue(entityId: String): EntityFieldValue<T>
+
+    fun getFieldValue(entityId: String): EntityFieldValue<T> {
+        val fieldValueId = compose(entityId, source.id)
+        return cast(DataHolder.instance.entityFieldValueHolder.getOrPut(fieldValueId) {
+            val entityFieldValue = createFieldValue(entityId)
+            entityFieldValue.source = DataHolder.instance.bootstrap.fieldValueService.getById(fieldValueId)
+            entityFieldValue
+        })!!
+    }
+
 
     private fun update(name: String, alias: String, description: Any?) {
         DataHolder.instance.manager?.fieldUpdate(
@@ -121,6 +134,9 @@ abstract class IEntityField(initData: IField) : IBaseStructure<IField>(initData)
 
 abstract class IEntity(initData: INode) : IBaseStructure<INode>(initData) {
     companion object {
+        fun <T> getEntityField(nodeClassId: String, key: String): T =
+                cast(DataHolder.instance.entityFieldHolder[compose(nodeClassId, key)])!!
+
         fun add(id: String, parentId: String, nodeClassId: String, name: String, alias: String, tags: List<String>,
                 externalNodeIdScope: List<String>,
                 externalNodeClassTagScope: List<String>,
@@ -140,6 +156,11 @@ abstract class IEntity(initData: INode) : IBaseStructure<INode>(initData) {
             )
         }
     }
+
+
+    fun getCustomFieldValue(fieldId: String): EntityFieldValue<ValueDescription>? =
+            cast<CustomField>(DataHolder.instance.entityFieldHolder[fieldId])?.getFieldValue(this.source.id)
+
 
     private fun update(name: String, alias: String, description: Any?) {
         DataHolder.instance.manager?.nodeUpdate(
@@ -167,7 +188,7 @@ abstract class IEntity(initData: INode) : IBaseStructure<INode>(initData) {
 abstract class IBaseProperty<T, U : IBaseData>(private val castFunction: (raw: U) -> T, initValue: T? = null) : ObservableOnSubscribe<T> {
     private var emitters = mutableListOf<ObservableEmitter<T>>()
     private var lastParseTime: Long = -1
-    private var _value: T? = initValue
+    protected var _value: T? = initValue
 
     val value: T?
         get() {
@@ -229,7 +250,7 @@ abstract class IBaseProperty<T, U : IBaseData>(private val castFunction: (raw: U
         emitters.add(emitter)
     }
 
-    fun onDelete() {
+    open fun onDelete() {
         emitters.forEach {
             if (!it.isDisposed)
                 it.onComplete()
@@ -238,7 +259,21 @@ abstract class IBaseProperty<T, U : IBaseData>(private val castFunction: (raw: U
     }
 }
 
-open class EntityFieldValue<T>(castFunction: (raw: IFieldValue) -> T) : IBaseProperty<T, IFieldValue>(castFunction) {
+open class EntityFieldValue<T>(private val nodeId: String, private val fieldId: String, castFunction: (raw: IFieldValue) -> T) : IBaseProperty<T, IFieldValue>(castFunction) {
+    val session: String?
+        get() = source?.session
+    val updateTime: Long?
+        get() = source?.updateTime
+
+    fun update(v: T, session: String? = null) =
+            DataHolder.instance.bootstrap.fieldValueService.setFieldValue(
+                    nodeId,
+                    fieldId,
+                    if (v is String)
+                        v
+                    else
+                        stringfy(v as Any),
+                    session)
 
 }
 
