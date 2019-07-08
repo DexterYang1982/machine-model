@@ -238,6 +238,10 @@ abstract class IBaseProperty<T, U : IBaseData>(private val castFunction: (raw: U
     }
 }
 
+open class EntityFieldValue<T>(castFunction: (raw: IFieldValue) -> T) : IBaseProperty<T, IFieldValue>(castFunction) {
+
+}
+
 interface IDependOnOthers {
     fun id(): String
     fun dependence(): List<String>

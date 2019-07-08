@@ -10,6 +10,8 @@ import net.gridtech.machine.model.entityClass.MachineClass
 import net.gridtech.machine.model.entityClass.ModbusUnitClass
 import net.gridtech.machine.model.entityClass.RootClass
 import net.gridtech.machine.model.entityField.CustomField
+import net.gridtech.machine.model.entityField.RunningStatusField
+import net.gridtech.machine.model.entityField.SecretField
 
 class DataHolder(bootstrap: Bootstrap, val domainNodeId: String? = null, val domainNodeClassId: String? = null, val manager: IManager? = null) {
     val entityClassHolder = HashMap<String, IEntityClass>()
@@ -98,6 +100,8 @@ class DataHolder(bootstrap: Bootstrap, val domainNodeId: String? = null, val dom
 
     private fun createEntityField(field: IField): IEntityField? = null
             ?: CustomField.create(field)
+            ?: RunningStatusField.create(field)
+            ?: SecretField.create(field)
 
 
     private fun createEntity(node: INode): IEntity? = null
