@@ -6,7 +6,7 @@ import net.gridtech.machine.model.IEntityClass
 
 class MachineClass(nodeClass: INodeClass) : IEntityClass(nodeClass) {
     companion object {
-        private val tags = listOf("machine")
+        val tags = listOf("machine class")
         fun create(nodeClass: INodeClass): MachineClass? =
                 if (nodeClass.tags.containsAll(tags))
                     MachineClass(nodeClass)

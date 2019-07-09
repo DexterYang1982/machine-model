@@ -6,7 +6,7 @@ import io.reactivex.ObservableOnSubscribe
 import net.gridtech.core.data.*
 import net.gridtech.core.util.*
 import net.gridtech.machine.model.entityField.CustomField
-import net.gridtech.machine.model.property.ValueDescription
+import net.gridtech.machine.model.property.field.ValueDescription
 
 abstract class IBaseStructure<T : IStructureData>(initData: T) {
     open fun getDescriptionProperty(): IBaseProperty<*, T>? = null
@@ -27,11 +27,9 @@ abstract class IBaseStructure<T : IStructureData>(initData: T) {
             System.err.println("[Update] ${javaClass.simpleName}  id=${source.id}")
         }
 
-
     init {
         System.err.println("[Create]  ${javaClass.simpleName}  id=${source.id}")
     }
-
 
     fun onDelete() {
         System.err.println("[Delete] ${javaClass.simpleName}  id=${source.id}")
@@ -156,6 +154,8 @@ abstract class IEntity(initData: INode) : IBaseStructure<INode>(initData) {
             )
         }
     }
+
+    fun <T> getEntityClass(): T = cast(DataHolder.instance.entityClassHolder[source.nodeClassId])!!
 
 
     fun getCustomFieldValue(fieldId: String): EntityFieldValue<ValueDescription>? =

@@ -1,14 +1,13 @@
 package net.gridtech.machine.model
 
+import io.reactivex.Observable
+import io.reactivex.Single
+import io.reactivex.subjects.PublishSubject
 import net.gridtech.core.Bootstrap
 import net.gridtech.core.data.*
-import net.gridtech.machine.model.entity.Domain
-import net.gridtech.machine.model.entity.Machine
-import net.gridtech.machine.model.entity.Root
-import net.gridtech.machine.model.entityClass.DomainClass
-import net.gridtech.machine.model.entityClass.MachineClass
-import net.gridtech.machine.model.entityClass.ModbusUnitClass
-import net.gridtech.machine.model.entityClass.RootClass
+import net.gridtech.core.util.cast
+import net.gridtech.machine.model.entity.*
+import net.gridtech.machine.model.entityClass.*
 import net.gridtech.machine.model.entityField.CustomField
 import net.gridtech.machine.model.entityField.RunningStatusField
 import net.gridtech.machine.model.entityField.SecretField
@@ -18,6 +17,10 @@ class DataHolder(val bootstrap: Bootstrap, val domainNodeId: String? = null, val
     val entityFieldHolder = HashMap<String, IEntityField<*>>()
     val entityHolder = HashMap<String, IEntity>()
     val entityFieldValueHolder = HashMap<String, EntityFieldValue<*>>()
+
+    private val entityClassPublisher = PublishSubject.create<IEntityClass>()
+    private val entityFieldPublisher = PublishSubject.create<IEntityField<*>>()
+    private val entityPublisher = PublishSubject.create<IEntity>()
 
     private val dependencyMap = HashMap<String, List<String>>()
 
@@ -37,6 +40,7 @@ class DataHolder(val bootstrap: Bootstrap, val domainNodeId: String? = null, val
                             } else {
                                 createEntityClass(nodeClass)?.apply {
                                     entityClassHolder[nodeClass.id] = this
+                                    entityClassPublisher.onNext(this)
                                 }
                             }
                         }
@@ -55,6 +59,7 @@ class DataHolder(val bootstrap: Bootstrap, val domainNodeId: String? = null, val
                             } else {
                                 createEntityField(field)?.apply {
                                     entityFieldHolder[field.id] = this
+                                    entityFieldPublisher.onNext(this)
                                 }
                             }
                         }
@@ -73,6 +78,7 @@ class DataHolder(val bootstrap: Bootstrap, val domainNodeId: String? = null, val
                             } else {
                                 createEntity(node)?.apply {
                                     entityHolder[node.id] = this
+                                    entityPublisher.onNext(this)
                                 }
                             }
                         }
@@ -103,12 +109,34 @@ class DataHolder(val bootstrap: Bootstrap, val domainNodeId: String? = null, val
     fun checkDependency(id: String) =
             dependencyMap.values.find { it.contains(id) } == null
 
+    fun <T : IEntity> getEntityByTagsObservable(tags: List<String>): Observable<T> =
+            Observable.concat(
+                    Observable.fromIterable(entityHolder.values.mapNotNull { entity ->
+                        if (entity.source.tags.containsAll(tags))
+                            cast<T>(entity)!!
+                        else
+                            null
+                    }),
+                    entityPublisher.filter { it.source.tags.containsAll(tags) }.map { cast<T>(it)!! }
+            )
+
+    fun <T : IEntity> getEntityByIdObservable(id: String): Single<T> =
+            entityHolder[id]
+                    ?.let { entity ->
+                        Single.just(cast<T>(entity)!!)
+                    }
+                    ?: entityPublisher
+                            .filter { it.source.id == id }
+                            .map { cast<T>(it)!! }.singleOrError()
 
     private fun createEntityClass(nodeClass: INodeClass): IEntityClass? = null
             ?: RootClass.create(nodeClass)
             ?: DomainClass.create(nodeClass)
             ?: MachineClass.create(nodeClass)
+            ?: ModbusSlaveClass.create(nodeClass)
             ?: ModbusUnitClass.create(nodeClass)
+            ?: GroupClass.create(nodeClass)
+            ?: DisplayClass.create(nodeClass)
 
     private fun createEntityField(field: IField): IEntityField<*>? = null
             ?: CustomField.create(field)
@@ -120,5 +148,9 @@ class DataHolder(val bootstrap: Bootstrap, val domainNodeId: String? = null, val
             ?: Root.create(node)
             ?: Domain.create(node)
             ?: Machine.create(node)
+            ?: ModbusSlave.create(node)
+            ?: ModbusUnit.create(node)
+            ?: Group.create(node)
+            ?: Display.create(node)
 
 }

@@ -1,4 +1,4 @@
-package net.gridtech.machine.model.property
+package net.gridtech.machine.model.property.entityClass
 
 import net.gridtech.core.data.INodeClass
 import net.gridtech.core.util.APIExceptionEnum

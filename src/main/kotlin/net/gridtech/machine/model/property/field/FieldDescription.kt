@@ -1,4 +1,4 @@
-package net.gridtech.machine.model.property
+package net.gridtech.machine.model.property.field
 
 import net.gridtech.core.data.IField
 import net.gridtech.core.data.IFieldValue

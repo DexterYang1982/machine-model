@@ -5,9 +5,9 @@ import net.gridtech.core.util.generateId
 import net.gridtech.machine.model.EntityFieldValue
 import net.gridtech.machine.model.IBaseProperty
 import net.gridtech.machine.model.IEntityField
-import net.gridtech.machine.model.property.FieldDescription
-import net.gridtech.machine.model.property.FieldDescriptionProperty
-import net.gridtech.machine.model.property.ValueDescription
+import net.gridtech.machine.model.property.field.FieldDescription
+import net.gridtech.machine.model.property.field.FieldDescriptionProperty
+import net.gridtech.machine.model.property.field.ValueDescription
 
 class CustomField(field: IField) : IEntityField<ValueDescription>(field) {
     val valueDescriptionProperty = FieldDescriptionProperty(this)

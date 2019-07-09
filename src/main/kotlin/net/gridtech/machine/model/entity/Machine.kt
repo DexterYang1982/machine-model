@@ -9,13 +9,13 @@ import net.gridtech.machine.model.entityField.SecretField
 
 class Machine(node: INode) : IEntity(node) {
     val runningStatus
-        get() = getEntityField<RunningStatusField>(source.nodeClassId,RunningStatusField.key).getFieldValue(source.id)
+        get() = getEntityField<RunningStatusField>(source.nodeClassId, RunningStatusField.key).getFieldValue(source.id)
     val secret
-        get() = getEntityField<SecretField>(source.nodeClassId,SecretField.key).getFieldValue(source.id)
+        get() = getEntityField<SecretField>(source.nodeClassId, SecretField.key).getFieldValue(source.id)
 
 
     companion object {
-        private val tags = listOf("machine")
+        val tags = listOf("machine")
         fun create(node: INode): Machine? =
                 if (node.tags.containsAll(tags))
                     Machine(node)

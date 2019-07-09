@@ -3,8 +3,8 @@ package net.gridtech.machine.model.entityClass
 import net.gridtech.core.data.INodeClass
 import net.gridtech.machine.model.IBaseProperty
 import net.gridtech.machine.model.IEntityClass
-import net.gridtech.machine.model.property.ModbusUnitDescription
-import net.gridtech.machine.model.property.ModbusUnitDescriptionProperty
+import net.gridtech.machine.model.property.entityClass.ModbusUnitDescription
+import net.gridtech.machine.model.property.entityClass.ModbusUnitDescriptionProperty
 
 
 class ModbusUnitClass(nodeClass: INodeClass) : IEntityClass(nodeClass) {
@@ -12,7 +12,7 @@ class ModbusUnitClass(nodeClass: INodeClass) : IEntityClass(nodeClass) {
     override fun getDescriptionProperty(): IBaseProperty<*, INodeClass>? = modbusUnitDescription
 
     companion object {
-        private val tags = listOf("modbus unit class")
+        val tags = listOf("modbus unit class")
         fun create(nodeClass: INodeClass): ModbusUnitClass? =
                 if (nodeClass.tags.containsAll(tags))
                     ModbusUnitClass(nodeClass)
