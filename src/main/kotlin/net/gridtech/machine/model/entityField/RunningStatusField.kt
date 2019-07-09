@@ -14,7 +14,7 @@ class RunningStatusField(field: IField) : IEntityField<Boolean>(field) {
     companion object {
         val key = KEY_FIELD_RUNNING_STATUS
         fun create(field: IField): RunningStatusField? =
-                if (field.match(key))
+                if (field.matchKey(key))
                     RunningStatusField(field)
                 else
                     null

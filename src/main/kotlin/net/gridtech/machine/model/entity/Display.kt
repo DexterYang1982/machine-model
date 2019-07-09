@@ -4,11 +4,15 @@ import net.gridtech.core.data.INode
 import net.gridtech.core.util.generateId
 import net.gridtech.machine.model.IEntity
 import net.gridtech.machine.model.entityClass.DisplayClass
+import net.gridtech.machine.model.entityField.RunningStatusField
 
 
 class Display(node: INode) : IEntity(node) {
 
     val displayClientVersion = getEntityClass<DisplayClass>().displayClientVersionDescription
+
+    val runningStatus
+        get() = getEntityField<RunningStatusField>(source.nodeClassId, RunningStatusField.key).getFieldValue(source.id)
 
     companion object {
         val tags = listOf("display")

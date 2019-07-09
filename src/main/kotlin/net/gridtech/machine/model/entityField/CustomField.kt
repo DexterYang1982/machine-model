@@ -23,7 +23,7 @@ class CustomField(field: IField) : IEntityField<ValueDescription>(field) {
 
         fun add(entityClassId: String, name: String, alias: String) {
             add(
-                    "CUSTOM-${generateId()}",
+                    "custom-${generateId()}",
                     entityClassId,
                     name,
                     alias,

@@ -7,6 +7,7 @@ import net.gridtech.core.util.generateId
 import net.gridtech.core.util.parse
 import net.gridtech.machine.model.DataHolder
 import net.gridtech.machine.model.IBaseProperty
+import net.gridtech.machine.model.IDependOnOthers
 import net.gridtech.machine.model.entityField.CustomField
 
 class FieldDescriptionProperty(private val customField: CustomField)
@@ -81,4 +82,14 @@ data class ValueDescription(
                 color = ""
         )
     }
+}
+
+data class EntityCustomFieldValue(
+        var id: String,
+        var entityId: String,
+        var customFieldId: String,
+        var valueDescriptionId: String
+) : IDependOnOthers {
+    override fun id(): String = id
+    override fun dependence(): List<String> = listOf(entityId, customFieldId, valueDescriptionId)
 }

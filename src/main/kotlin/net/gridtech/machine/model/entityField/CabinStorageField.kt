@@ -1,22 +1,24 @@
 package net.gridtech.machine.model.entityField
 
 import net.gridtech.core.data.IField
+import net.gridtech.core.util.cast
 import net.gridtech.machine.model.EntityFieldValue
 import net.gridtech.machine.model.IEntityField
 
-class SlaveConnectionField(field: IField) : IEntityField<Boolean>(field) {
+
+class CabinStorageField(field: IField) : IEntityField<List<String>>(field) {
     companion object {
-        val key = "connection"
-        fun create(field: IField): SecretField? =
-                if (field.match(key))
-                    SecretField(field)
+        val key = "cabin-storage"
+        fun create(field: IField): CabinStorageField? =
+                if (field.matchKey(key))
+                    CabinStorageField(field)
                 else
                     null
 
         fun add(entityClassId: String) = add(
                 key = key,
                 nodeClassId = entityClassId,
-                name = "slave connection",
+                name = "cabin storage",
                 alias = "connection",
                 tags = emptyList(),
                 through = true,
@@ -24,8 +26,6 @@ class SlaveConnectionField(field: IField) : IEntityField<Boolean>(field) {
         )
     }
 
-    override fun createFieldValue(entityId: String): EntityFieldValue<Boolean> =
-            object : EntityFieldValue<Boolean>(entityId, source.id, { fieldValue ->
-                fieldValue.value == "true"
-            }) {}
+    override fun createFieldValue(entityId: String): EntityFieldValue<List<String>> =
+            object : EntityFieldValue<List<String>>(entityId, source.id, { cast(it.value)!! }) {}
 }

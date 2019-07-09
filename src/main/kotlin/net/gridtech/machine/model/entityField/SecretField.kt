@@ -10,7 +10,7 @@ class SecretField(field: IField) : IEntityField<String>(field) {
     companion object {
         val key = KEY_FIELD_SECRET
         fun create(field: IField): SecretField? =
-                if (field.match(key))
+                if (field.matchKey(key))
                     SecretField(field)
                 else
                     null

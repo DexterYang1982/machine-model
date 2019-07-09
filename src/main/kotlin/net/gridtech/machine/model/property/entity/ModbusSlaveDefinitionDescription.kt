@@ -6,10 +6,8 @@ import net.gridtech.machine.model.IBaseProperty
 import net.gridtech.machine.model.entity.ModbusSlave
 
 
-class SlaveAddressDescription(private val modbusSlave: ModbusSlave)
-    : IBaseProperty<SlaveAddress, INode>({ parse(it.description) }, SlaveAddress.empty()) {
-
-}
+class ModbusSlaveDefinitionDescription(private val modbusSlave: ModbusSlave)
+    : IBaseProperty<SlaveAddress, INode>({ parse(it.description) }, SlaveAddress.empty())
 
 data class SlaveAddress(
         var ip: String,

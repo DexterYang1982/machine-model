@@ -5,16 +5,16 @@ import net.gridtech.core.util.generateId
 import net.gridtech.machine.model.IBaseProperty
 import net.gridtech.machine.model.IEntity
 import net.gridtech.machine.model.entityClass.ModbusSlaveClass
-import net.gridtech.machine.model.entityField.SlaveConnectionField
+import net.gridtech.machine.model.entityField.ModbusSlaveConnectionField
+import net.gridtech.machine.model.property.entity.ModbusSlaveDefinitionDescription
 import net.gridtech.machine.model.property.entity.SlaveAddress
-import net.gridtech.machine.model.property.entity.SlaveAddressDescription
 
 
 class ModbusSlave(node: INode) : IEntity(node) {
-    val slaveAddress = SlaveAddressDescription(this)
-    override fun getDescriptionProperty(): IBaseProperty<*, INode>? = slaveAddress
+    val modbusSlaveDefinition = ModbusSlaveDefinitionDescription(this)
+    override fun getDescriptionProperty(): IBaseProperty<*, INode>? = modbusSlaveDefinition
     val slaveConnection
-        get() = getEntityField<SlaveConnectionField>(source.nodeClassId, SlaveConnectionField.key).getFieldValue(source.id)
+        get() = getEntityField<ModbusSlaveConnectionField>(source.nodeClassId, ModbusSlaveConnectionField.key).getFieldValue(source.id)
 
     companion object {
         val tags = listOf("modbus slave")
@@ -36,7 +36,7 @@ class ModbusSlave(node: INode) : IEntity(node) {
                         externalNodeClassTagScope = emptyList(),
                         description = SlaveAddress.empty()
                 )?.apply {
-                    getEntityField<SlaveConnectionField>(modbusSlaveClass.source.id, SlaveConnectionField.key)
+                    getEntityField<ModbusSlaveConnectionField>(modbusSlaveClass.source.id, ModbusSlaveConnectionField.key)
                             .createFieldValue(this.id).update(false)
                 }
     }

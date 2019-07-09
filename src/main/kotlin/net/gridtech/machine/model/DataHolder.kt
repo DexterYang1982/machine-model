@@ -8,9 +8,7 @@ import net.gridtech.core.data.*
 import net.gridtech.core.util.cast
 import net.gridtech.machine.model.entity.*
 import net.gridtech.machine.model.entityClass.*
-import net.gridtech.machine.model.entityField.CustomField
-import net.gridtech.machine.model.entityField.RunningStatusField
-import net.gridtech.machine.model.entityField.SecretField
+import net.gridtech.machine.model.entityField.*
 
 class DataHolder(val bootstrap: Bootstrap, val domainNodeId: String? = null, val domainNodeClassId: String? = null, val manager: IManager? = null) {
     val entityClassHolder = HashMap<String, IEntityClass>()
@@ -137,11 +135,17 @@ class DataHolder(val bootstrap: Bootstrap, val domainNodeId: String? = null, val
             ?: ModbusUnitClass.create(nodeClass)
             ?: GroupClass.create(nodeClass)
             ?: DisplayClass.create(nodeClass)
+            ?: CabinClass.create(nodeClass)
+            ?: DeviceClass.create(nodeClass)
 
     private fun createEntityField(field: IField): IEntityField<*>? = null
             ?: CustomField.create(field)
             ?: RunningStatusField.create(field)
             ?: SecretField.create(field)
+            ?: ModbusSlaveConnectionField.create(field)
+            ?: CabinStorageField.create(field)
+            ?: CabinEmptyField.create(field)
+            ?: DeviceHealthField.create(field)
 
 
     private fun createEntity(node: INode): IEntity? = null
@@ -152,5 +156,7 @@ class DataHolder(val bootstrap: Bootstrap, val domainNodeId: String? = null, val
             ?: ModbusUnit.create(node)
             ?: Group.create(node)
             ?: Display.create(node)
+            ?: Cabin.create(node)
+            ?: Device.create(node)
 
 }

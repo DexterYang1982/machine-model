@@ -2,7 +2,7 @@ package net.gridtech.machine.model.entityClass
 
 import net.gridtech.core.data.INodeClass
 import net.gridtech.machine.model.IEntityClass
-import net.gridtech.machine.model.entityField.SlaveConnectionField
+import net.gridtech.machine.model.entityField.ModbusSlaveConnectionField
 
 class ModbusSlaveClass(nodeClass: INodeClass) : IEntityClass(nodeClass) {
 
@@ -17,7 +17,7 @@ class ModbusSlaveClass(nodeClass: INodeClass) : IEntityClass(nodeClass) {
         fun add(name: String, alias: String) =
                 add(name, alias, false, tags, null)
                         ?.apply {
-                            SlaveConnectionField.add(this.id)
+                            ModbusSlaveConnectionField.add(this.id)
                         }
     }
 }
