@@ -133,6 +133,7 @@ class DataHolder(val bootstrap: Bootstrap, val domainNodeId: String? = null, val
             ?: DisplayClass.create(nodeClass)
             ?: CabinClass.create(nodeClass)
             ?: DeviceClass.create(nodeClass)
+            ?: TunnelClass.create(nodeClass)
 
 
     private fun createEntity(node: INode): IEntity<*>? = null
@@ -145,5 +146,6 @@ class DataHolder(val bootstrap: Bootstrap, val domainNodeId: String? = null, val
             ?: Display.create(node)
             ?: Cabin.create(node)
             ?: Device.create(node)
+            ?: Tunnel.create(node)
 
 }

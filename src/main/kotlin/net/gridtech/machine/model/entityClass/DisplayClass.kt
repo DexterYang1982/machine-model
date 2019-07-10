@@ -10,15 +10,15 @@ import net.gridtech.machine.model.property.entityClass.DisplayClientVersionDescr
 
 class DisplayClass(id: String) : IEntityClass(id) {
 
-    val description = DisplayClientVersionDescription(this)
-    override fun getDescriptionProperty(): IBaseProperty<*, INodeClass>? = description
-
     val runningStatus = RunningStatusField(this)
     val secret = SecretField(this)
 
+    val description = DisplayClientVersionDescription(this)
+    override fun getDescriptionProperty(): IBaseProperty<*, INodeClass>? = description
+
 
     fun addNew(name: String, alias: String) =
-        addNew(name, alias, tags, false)
+            addNew(name, alias, tags, false)
 
     companion object {
         val tags = listOf("display class")

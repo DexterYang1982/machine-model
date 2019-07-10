@@ -11,6 +11,8 @@ class Cabin : IEntity<CabinClass> {
     constructor(node: INode) : super(node)
     constructor(id: String, t: CabinClass) : super(id, t)
 
+
+
     fun addNew(parentId: String, name: String, alias: String) =
             addNew(
                     parentId,
