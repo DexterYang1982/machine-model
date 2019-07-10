@@ -8,38 +8,71 @@ import net.gridtech.core.util.*
 import net.gridtech.machine.model.entityField.CustomField
 import net.gridtech.machine.model.property.field.ValueDescription
 
-abstract class IBaseStructure<T : IStructureData>(initData: T) {
+abstract class IBaseStructure<T : IStructureData>(val id: String) {
+    open fun initialize(initData: T?) {
+        source = initData
+    }
+
     open fun getDescriptionProperty(): IBaseProperty<*, T>? = null
-    val nameProperty = object : IBaseProperty<String, IStructureData>({ structure ->
+    val name = object : IBaseProperty<String, IStructureData>({ structure ->
         structure.name
     }) {}
-    val aliasProperty = object : IBaseProperty<String, IStructureData>({ structure ->
+    val alias = object : IBaseProperty<String, IStructureData>({ structure ->
         structure.alias
     }) {}
 
-    var source: T = initData
-        set(value) {
-            field = value
-            nameProperty.source = value
-            aliasProperty.source = value
-            getDescriptionProperty()?.source = value
-
-            System.err.println("[Update] ${javaClass.simpleName}  id=${source.id}")
+    var source: T? = null
+        set(v) {
+            if (v != null) {
+                field = v
+                name.source = v
+                alias.source = v
+                getDescriptionProperty()?.source = v
+            }
         }
 
-    init {
-        System.err.println("[Create]  ${javaClass.simpleName}  id=${source.id}")
-    }
+    abstract fun update(name: String, alias: String, description: Any?)
+
+    fun updateNameAndAlias(name: String, alias: String) =
+            source?.apply {
+                update(name, alias, getDescriptionProperty()?.value)
+            }
+
+    fun updateDescription(description: Any?) =
+            source?.apply {
+                update(this.name, this.alias, description)
+            }
 
     fun onDelete() {
-        System.err.println("[Delete] ${javaClass.simpleName}  id=${source.id}")
-        nameProperty.onDelete()
-        aliasProperty.onDelete()
+        name.onDelete()
+        alias.onDelete()
         getDescriptionProperty()?.onDelete()
+    }
+
+    abstract fun doDelete()
+
+    fun delete() {
+        source?.apply {
+            APIExceptionEnum.ERR10_CAN_NOT_BE_DELETED.assert(DataHolder.instance.checkDependency(id))
+            doDelete()
+        }
     }
 }
 
-abstract class IEntityClass(initData: INodeClass) : IBaseStructure<INodeClass>(initData) {
+abstract class IEntityClass(id: String) : IBaseStructure<INodeClass>(id) {
+    private val embeddedFields = ArrayList<IEmbeddedEntityField<*>>()
+    override fun initialize(initData: INodeClass?) {
+        super.initialize(initData)
+        javaClass.methods.filter { method ->
+            method.name.startsWith("get") && method.returnType == IEmbeddedEntityField::class.java
+        }.forEach { method ->
+            embeddedFields.add(method.invoke(this) as IEmbeddedEntityField<*>)
+        }
+        embeddedFields.forEach { field ->
+            DataHolder.instance.entityFieldHolder[field.id] = field
+        }
+    }
+
     companion object {
         fun add(name: String, alias: String, connectable: Boolean, tags: List<String>, description: Any?): INodeClass? {
             val nodeClassTags = tags.toMutableList()
@@ -55,30 +88,21 @@ abstract class IEntityClass(initData: INodeClass) : IBaseStructure<INodeClass>(i
         }
     }
 
-    private fun update(name: String, alias: String, description: Any?) {
+    override fun update(name: String, alias: String, description: Any?) {
         DataHolder.instance.manager?.nodeClassUpdate(
-                id = source.id,
+                id = id,
                 name = name,
                 alias = alias,
                 description = description
         )
     }
 
-    fun updateNameAndAlias(name: String, alias: String) {
-        update(name, alias, getDescriptionProperty()?.value)
+    override fun doDelete() {
+        DataHolder.instance.manager?.nodeClassDelete(id)
     }
-
-    fun updateDescription(description: Any?) {
-        update(source.name, source.alias, description)
-    }
-
-    fun delete() {
-        DataHolder.instance.manager?.nodeClassDelete(source.id)
-    }
-
 }
 
-abstract class IEntityField<T>(initData: IField) : IBaseStructure<IField>(initData) {
+abstract class IEntityField<T>(id: String) : IBaseStructure<IField>(id) {
     companion object {
         fun add(key: String, nodeClassId: String, name: String, alias: String, tags: List<String>, through: Boolean, description: Any?): IField? {
             val fieldTags = tags.toMutableList()
@@ -98,7 +122,7 @@ abstract class IEntityField<T>(initData: IField) : IBaseStructure<IField>(initDa
     abstract fun createFieldValue(entityId: String): EntityFieldValue<T>
 
     fun getFieldValue(entityId: String): EntityFieldValue<T> {
-        val fieldValueId = compose(entityId, source.id)
+        val fieldValueId = compose(entityId, id)
         return cast(DataHolder.instance.entityFieldValueHolder.getOrPut(fieldValueId) {
             val entityFieldValue = createFieldValue(entityId)
             entityFieldValue.source = DataHolder.instance.bootstrap.fieldValueService.getById(fieldValueId)
@@ -106,35 +130,29 @@ abstract class IEntityField<T>(initData: IField) : IBaseStructure<IField>(initDa
         })!!
     }
 
-
-    private fun update(name: String, alias: String, description: Any?) {
+    override fun update(name: String, alias: String, description: Any?) {
         DataHolder.instance.manager?.fieldUpdate(
-                id = source.id,
+                id = id,
                 name = name,
                 alias = alias,
                 description = description
         )
     }
 
-    fun updateNameAndAlias(name: String, alias: String) {
-        update(name, alias, getDescriptionProperty()?.value)
-    }
-
-    fun updateDescription(description: Any?) {
-        update(source.name, source.alias, description)
-    }
-
-    fun delete() {
-        APIExceptionEnum.ERR10_CAN_NOT_BE_DELETED.assert(DataHolder.instance.checkDependency(source.id))
-        DataHolder.instance.manager?.fieldDelete(source.id)
+    override fun doDelete() {
+        DataHolder.instance.manager?.fieldDelete(id)
     }
 }
 
-abstract class IEntity(initData: INode) : IBaseStructure<INode>(initData) {
-    companion object {
-        fun <T> getEntityField(nodeClassId: String, key: String): T =
-                cast(DataHolder.instance.entityFieldHolder[compose(nodeClassId, key)])!!
+abstract class IEmbeddedEntityField<T>(id: String) : IEntityField<T>(id)
 
+abstract class IEntity<T>(node: INode) : IBaseStructure<INode>(node.id) {
+    val entityClass: T = cast(DataHolder.instance.entityClassHolder[node.nodeClassId])!!
+    init {
+        super.initialize(node)
+    }
+
+    companion object {
         fun add(id: String, parentId: String, nodeClassId: String, name: String, alias: String, tags: List<String>,
                 externalNodeIdScope: List<String>,
                 externalNodeClassTagScope: List<String>,
@@ -155,33 +173,21 @@ abstract class IEntity(initData: INode) : IBaseStructure<INode>(initData) {
         }
     }
 
-    fun <T> getEntityClass(): T = cast(DataHolder.instance.entityClassHolder[source.nodeClassId])!!
-
-
     fun getCustomFieldValue(fieldId: String): EntityFieldValue<ValueDescription>? =
             cast<CustomField>(DataHolder.instance.entityFieldHolder[fieldId])?.getFieldValue(this.source.id)
 
 
-    private fun update(name: String, alias: String, description: Any?) {
+    override fun update(name: String, alias: String, description: Any?) {
         DataHolder.instance.manager?.nodeUpdate(
-                id = source.id,
+                id = id,
                 name = name,
                 alias = alias,
                 description = description
         )
     }
 
-    fun updateNameAndAlias(name: String, alias: String) {
-        update(name, alias, getDescriptionProperty()?.value)
-    }
-
-    fun updateDescription(description: Any?) {
-        update(source.name, source.alias, description)
-    }
-
-    fun delete() {
-        APIExceptionEnum.ERR10_CAN_NOT_BE_DELETED.assert(DataHolder.instance.checkDependency(source.id))
-        DataHolder.instance.manager?.nodeDelete(source.id)
+    override fun doDelete() {
+        DataHolder.instance.manager?.nodeDelete(id)
     }
 }
 

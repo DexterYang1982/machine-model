@@ -8,17 +8,15 @@ import net.gridtech.core.data.*
 import net.gridtech.core.util.cast
 import net.gridtech.machine.model.entity.*
 import net.gridtech.machine.model.entityClass.*
-import net.gridtech.machine.model.entityField.*
+import net.gridtech.machine.model.entityField.CustomField
 
 class DataHolder(val bootstrap: Bootstrap, val domainNodeId: String? = null, val domainNodeClassId: String? = null, val manager: IManager? = null) {
     val entityClassHolder = HashMap<String, IEntityClass>()
     val entityFieldHolder = HashMap<String, IEntityField<*>>()
-    val entityHolder = HashMap<String, IEntity>()
+    val entityHolder = HashMap<String, IEntity<*>>()
     val entityFieldValueHolder = HashMap<String, EntityFieldValue<*>>()
 
-    private val entityClassPublisher = PublishSubject.create<IEntityClass>()
-    private val entityFieldPublisher = PublishSubject.create<IEntityField<*>>()
-    private val entityPublisher = PublishSubject.create<IEntity>()
+    private val entityAddedPublisher = PublishSubject.create<IEntity<*>>()
 
     private val dependencyMap = HashMap<String, List<String>>()
 
@@ -38,7 +36,6 @@ class DataHolder(val bootstrap: Bootstrap, val domainNodeId: String? = null, val
                             } else {
                                 createEntityClass(nodeClass)?.apply {
                                     entityClassHolder[nodeClass.id] = this
-                                    entityClassPublisher.onNext(this)
                                 }
                             }
                         }
@@ -53,11 +50,10 @@ class DataHolder(val bootstrap: Bootstrap, val domainNodeId: String? = null, val
                         ChangedType.UPDATE -> {
                             val field = it.third!!
                             if (entityFieldHolder.containsKey(it.second)) {
-                                entityFieldHolder[it.second]!!.source = field
+                                entityFieldHolder[field.id]!!.source = field
                             } else {
-                                createEntityField(field)?.apply {
+                                CustomField.create(field)?.apply {
                                     entityFieldHolder[field.id] = this
-                                    entityFieldPublisher.onNext(this)
                                 }
                             }
                         }
@@ -76,7 +72,7 @@ class DataHolder(val bootstrap: Bootstrap, val domainNodeId: String? = null, val
                             } else {
                                 createEntity(node)?.apply {
                                     entityHolder[node.id] = this
-                                    entityPublisher.onNext(this)
+                                    entityAddedPublisher.onNext(this)
                                 }
                             }
                         }
@@ -107,24 +103,24 @@ class DataHolder(val bootstrap: Bootstrap, val domainNodeId: String? = null, val
     fun checkDependency(id: String) =
             dependencyMap.values.find { it.contains(id) } == null
 
-    fun <T : IEntity> getEntityByTagsObservable(tags: List<String>): Observable<T> =
+    fun <T : IEntity<*>> getEntityByTagsObservable(tags: List<String>): Observable<T> =
             Observable.concat(
                     Observable.fromIterable(entityHolder.values.mapNotNull { entity ->
-                        if (entity.source.tags.containsAll(tags))
+                        if (entity.source?.tags?.containsAll(tags) == true)
                             cast<T>(entity)!!
                         else
                             null
                     }),
-                    entityPublisher.filter { it.source.tags.containsAll(tags) }.map { cast<T>(it)!! }
+                    entityAddedPublisher.filter { it.source?.tags?.containsAll(tags) == true }.map { cast<T>(it)!! }
             )
 
-    fun <T : IEntity> getEntityByIdObservable(id: String): Single<T> =
+    fun <T : IEntity<*>> getEntityByIdObservable(id: String): Single<T> =
             entityHolder[id]
                     ?.let { entity ->
                         Single.just(cast<T>(entity)!!)
                     }
-                    ?: entityPublisher
-                            .filter { it.source.id == id }
+                    ?: entityAddedPublisher
+                            .filter { it.source?.id == id }
                             .map { cast<T>(it)!! }.singleOrError()
 
     private fun createEntityClass(nodeClass: INodeClass): IEntityClass? = null
@@ -138,17 +134,8 @@ class DataHolder(val bootstrap: Bootstrap, val domainNodeId: String? = null, val
             ?: CabinClass.create(nodeClass)
             ?: DeviceClass.create(nodeClass)
 
-    private fun createEntityField(field: IField): IEntityField<*>? = null
-            ?: CustomField.create(field)
-            ?: RunningStatusField.create(field)
-            ?: SecretField.create(field)
-            ?: ModbusSlaveConnectionField.create(field)
-            ?: CabinStorageField.create(field)
-            ?: CabinEmptyField.create(field)
-            ?: DeviceHealthField.create(field)
 
-
-    private fun createEntity(node: INode): IEntity? = null
+    private fun createEntity(node: INode): IEntity<*>? = null
             ?: Root.create(node)
             ?: Domain.create(node)
             ?: Machine.create(node)

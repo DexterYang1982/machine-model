@@ -5,12 +5,16 @@ import net.gridtech.core.util.generateId
 import net.gridtech.machine.model.IBaseProperty
 import net.gridtech.machine.model.IEntity
 import net.gridtech.machine.model.entityClass.DeviceClass
+import net.gridtech.machine.model.entityField.DeviceHealthField
 import net.gridtech.machine.model.property.entity.DeviceDefinitionDescription
 
 
 class Device(node: INode) : IEntity(node) {
     val deviceDefinition = DeviceDefinitionDescription(this)
     override fun getDescriptionProperty(): IBaseProperty<*, INode>? = deviceDefinition
+
+    val deviceHealth
+        get() = getEntityField<DeviceHealthField>(source.nodeClassId, DeviceHealthField.key).getFieldValue(source.id)
 
     companion object {
         val tags = listOf("device")
@@ -32,6 +36,8 @@ class Device(node: INode) : IEntity(node) {
                         externalNodeClassTagScope = emptyList(),
                         description = null
                 )?.apply {
+                    getEntityField<DeviceHealthField>(deviceClass.source.id, DeviceHealthField.key)
+                            .createFieldValue(this.id).update(true)
                 }
     }
 }

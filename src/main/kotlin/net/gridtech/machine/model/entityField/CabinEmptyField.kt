@@ -1,19 +1,15 @@
 package net.gridtech.machine.model.entityField
 
-import net.gridtech.core.data.IField
 import net.gridtech.core.util.cast
+import net.gridtech.core.util.compose
 import net.gridtech.machine.model.EntityFieldValue
-import net.gridtech.machine.model.IEntityField
+import net.gridtech.machine.model.IEmbeddedEntityField
+import net.gridtech.machine.model.IEntityClass
 
 
-class CabinEmptyField(field: IField) : IEntityField<Boolean>(field) {
+class CabinEmptyField(entityClass: IEntityClass) : IEmbeddedEntityField<Boolean>(compose(entityClass.id, RunningStatusField.key)) {
     companion object {
-        val key = "cabin-is-empty"
-        fun create(field: IField): CabinEmptyField? =
-                if (field.matchKey(key))
-                    CabinEmptyField(field)
-                else
-                    null
+        const val key = "cabin-is-empty"
 
         fun add(entityClassId: String) = add(
                 key = key,
@@ -27,5 +23,5 @@ class CabinEmptyField(field: IField) : IEntityField<Boolean>(field) {
     }
 
     override fun createFieldValue(entityId: String): EntityFieldValue<Boolean> =
-            object : EntityFieldValue<Boolean>(entityId, source.id, { cast(it.value)!! }) {}
+            object : EntityFieldValue<Boolean>(entityId, id, { cast(it.value)!! }) {}
 }

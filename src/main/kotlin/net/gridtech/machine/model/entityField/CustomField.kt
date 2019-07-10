@@ -9,7 +9,7 @@ import net.gridtech.machine.model.property.field.FieldDescription
 import net.gridtech.machine.model.property.field.FieldDescriptionProperty
 import net.gridtech.machine.model.property.field.ValueDescription
 
-class CustomField(field: IField) : IEntityField<ValueDescription>(field) {
+class CustomField(field: IField) : IEntityField<ValueDescription>(field.id) {
     val valueDescriptionProperty = FieldDescriptionProperty(this)
     override fun getDescriptionProperty(): IBaseProperty<*, IField>? = valueDescriptionProperty
 
@@ -34,7 +34,7 @@ class CustomField(field: IField) : IEntityField<ValueDescription>(field) {
     }
 
     override fun createFieldValue(entityId: String): EntityFieldValue<ValueDescription> =
-            object : EntityFieldValue<ValueDescription>(entityId, source.id, { fieldValue ->
+            object : EntityFieldValue<ValueDescription>(entityId, id, { fieldValue ->
                 valueDescriptionProperty.value?.valueDescriptions
                         ?.find { Regex(it.valueExp).matches(fieldValue.value) }
                         ?: ValueDescription.create(fieldValue)

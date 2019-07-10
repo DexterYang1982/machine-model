@@ -4,6 +4,7 @@ import net.gridtech.core.data.INode
 import net.gridtech.core.util.parse
 import net.gridtech.machine.model.IBaseProperty
 import net.gridtech.machine.model.IDependOnOthers
+import net.gridtech.machine.model.ReadCondition
 import net.gridtech.machine.model.entity.Device
 
 
@@ -14,11 +15,11 @@ class DeviceDefinitionDescription(private val device: Device)
 data class DeviceDefinition(
         var status: List<ModbusRead>,
         var commands: List<ModbusWrite>,
-        var errorStatusValue: List<DeviceStatusValue>
+        var errorCondition: ReadCondition
 ) {
     companion object {
         fun empty() = DeviceDefinition(
-                emptyList(), emptyList(), emptyList()
+                emptyList(), emptyList(), ReadCondition.empty()
         )
     }
 }
@@ -39,24 +40,4 @@ data class ModbusWrite(
 ) : IDependOnOthers {
     override fun id(): String = id
     override fun dependence(): List<String> = listOf(modbusUnitId, writePointId)
-}
-
-data class DeviceStatusValue(
-        var id: String,
-        var deviceId: String,
-        var modbusReadId: String,
-        var valueDescriptionId: String
-) : IDependOnOthers {
-    override fun id(): String = id
-    override fun dependence(): List<String> = listOf(deviceId, modbusReadId, valueDescriptionId)
-}
-
-data class DeviceCommandValue(
-        var id: String,
-        var deviceId: String,
-        var modbusWriteId: String,
-        var valueDescriptionId: String
-) : IDependOnOthers {
-    override fun id(): String = id
-    override fun dependence(): List<String> = listOf(deviceId, modbusWriteId, valueDescriptionId)
 }

@@ -1,17 +1,13 @@
 package net.gridtech.machine.model.entityField
 
-import net.gridtech.core.data.IField
+import net.gridtech.core.util.compose
 import net.gridtech.machine.model.EntityFieldValue
-import net.gridtech.machine.model.IEntityField
+import net.gridtech.machine.model.IEmbeddedEntityField
+import net.gridtech.machine.model.IEntityClass
 
-class ModbusSlaveConnectionField(field: IField) : IEntityField<Boolean>(field) {
+class ModbusSlaveConnectionField(entityClass: IEntityClass) : IEmbeddedEntityField<Boolean>(compose(entityClass.id, RunningStatusField.key)) {
     companion object {
-        val key = "slave-connection"
-        fun create(field: IField): SecretField? =
-                if (field.matchKey(key))
-                    SecretField(field)
-                else
-                    null
+        const val key = "slave-connection"
 
         fun add(entityClassId: String) = add(
                 key = key,
@@ -25,7 +21,7 @@ class ModbusSlaveConnectionField(field: IField) : IEntityField<Boolean>(field) {
     }
 
     override fun createFieldValue(entityId: String): EntityFieldValue<Boolean> =
-            object : EntityFieldValue<Boolean>(entityId, source.id, { fieldValue ->
+            object : EntityFieldValue<Boolean>(entityId, id, { fieldValue ->
                 fieldValue.value == "true"
             }) {}
 }

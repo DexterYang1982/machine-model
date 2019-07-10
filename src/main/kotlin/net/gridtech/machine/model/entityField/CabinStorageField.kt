@@ -1,19 +1,15 @@
 package net.gridtech.machine.model.entityField
 
-import net.gridtech.core.data.IField
 import net.gridtech.core.util.cast
+import net.gridtech.core.util.compose
 import net.gridtech.machine.model.EntityFieldValue
-import net.gridtech.machine.model.IEntityField
+import net.gridtech.machine.model.IEmbeddedEntityField
+import net.gridtech.machine.model.IEntityClass
 
 
-class CabinStorageField(field: IField) : IEntityField<List<String>>(field) {
+class CabinStorageField(entityClass: IEntityClass) : IEmbeddedEntityField<List<String>>(compose(entityClass.id, RunningStatusField.key)) {
     companion object {
-        val key = "cabin-storage"
-        fun create(field: IField): CabinStorageField? =
-                if (field.matchKey(key))
-                    CabinStorageField(field)
-                else
-                    null
+        const val key = "cabin-storage"
 
         fun add(entityClassId: String) = add(
                 key = key,
@@ -27,5 +23,5 @@ class CabinStorageField(field: IField) : IEntityField<List<String>>(field) {
     }
 
     override fun createFieldValue(entityId: String): EntityFieldValue<List<String>> =
-            object : EntityFieldValue<List<String>>(entityId, source.id, { cast(it.value)!! }) {}
+            object : EntityFieldValue<List<String>>(entityId, id, { cast(it.value)!! }) {}
 }

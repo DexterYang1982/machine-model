@@ -1,27 +1,23 @@
 package net.gridtech.machine.model.entityField
 
 import io.reactivex.subjects.PublishSubject
-import net.gridtech.core.data.IField
 import net.gridtech.core.data.IFieldValue
 import net.gridtech.core.util.INTERVAL_RUNNING_STATUS_REPORT
 import net.gridtech.core.util.KEY_FIELD_RUNNING_STATUS
+import net.gridtech.core.util.compose
 import net.gridtech.core.util.currentTime
 import net.gridtech.machine.model.EntityFieldValue
-import net.gridtech.machine.model.IEntityField
+import net.gridtech.machine.model.IEmbeddedEntityField
+import net.gridtech.machine.model.IEntityClass
 import java.util.concurrent.TimeUnit
 
-class RunningStatusField(field: IField) : IEntityField<Boolean>(field) {
+class RunningStatusField(entityClass: IEntityClass) : IEmbeddedEntityField<Boolean>(compose(entityClass.id, key)) {
     companion object {
-        val key = KEY_FIELD_RUNNING_STATUS
-        fun create(field: IField): RunningStatusField? =
-                if (field.matchKey(key))
-                    RunningStatusField(field)
-                else
-                    null
+        const val key = KEY_FIELD_RUNNING_STATUS
     }
 
     override fun createFieldValue(entityId: String): EntityFieldValue<Boolean> =
-            object : EntityFieldValue<Boolean>(entityId, source.id, {
+            object : EntityFieldValue<Boolean>(entityId, id, {
                 (currentTime() - it.updateTime) < INTERVAL_RUNNING_STATUS_REPORT * 2
             }) {
                 private val counter = PublishSubject.create<IFieldValue>()

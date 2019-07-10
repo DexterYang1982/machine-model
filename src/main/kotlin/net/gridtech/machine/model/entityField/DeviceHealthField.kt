@@ -1,18 +1,14 @@
 package net.gridtech.machine.model.entityField
 
-import net.gridtech.core.data.IField
 import net.gridtech.core.util.cast
+import net.gridtech.core.util.compose
 import net.gridtech.machine.model.EntityFieldValue
-import net.gridtech.machine.model.IEntityField
+import net.gridtech.machine.model.IEmbeddedEntityField
+import net.gridtech.machine.model.IEntityClass
 
-class DeviceHealthField(field: IField) : IEntityField<Boolean>(field) {
+class DeviceHealthField(entityClass: IEntityClass) : IEmbeddedEntityField<Boolean>(compose(entityClass.id, RunningStatusField.key)) {
     companion object {
-        val key = "device-healthy"
-        fun create(field: IField): DeviceHealthField? =
-                if (field.matchKey(key))
-                    DeviceHealthField(field)
-                else
-                    null
+        const val key = "device-healthy"
 
         fun add(entityClassId: String) = add(
                 key = key,
@@ -26,5 +22,5 @@ class DeviceHealthField(field: IField) : IEntityField<Boolean>(field) {
     }
 
     override fun createFieldValue(entityId: String): EntityFieldValue<Boolean> =
-            object : EntityFieldValue<Boolean>(entityId, source.id, { cast(it.value)!! }) {}
+            object : EntityFieldValue<Boolean>(entityId, id, { cast(it.value)!! }) {}
 }
