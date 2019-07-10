@@ -6,20 +6,20 @@ import net.gridtech.machine.model.entityField.CabinEmptyField
 import net.gridtech.machine.model.entityField.CabinStorageField
 
 
-class CabinClass(nodeClass: INodeClass) : IEntityClass(nodeClass) {
+class CabinClass(id: String) : IEntityClass(id) {
+    val empty = CabinEmptyField(this)
+    val storage = CabinStorageField(this)
+
+    fun addNew(name: String, alias: String) {
+        addNew(name, alias, tags, false)
+    }
+
     companion object {
         val tags = listOf("cabin class")
         fun create(nodeClass: INodeClass): CabinClass? =
                 if (nodeClass.tags.containsAll(tags))
-                    CabinClass(nodeClass)
+                    CabinClass(nodeClass.id).apply { initialize(nodeClass) }
                 else
                     null
-
-        fun add(name: String, alias: String) =
-                add(name, alias, false, tags, null)
-                        ?.apply {
-                            CabinStorageField.add(this.id)
-                            CabinEmptyField.add(this.id)
-                        }
     }
 }

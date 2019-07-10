@@ -6,9 +6,7 @@ import net.gridtech.machine.model.IEntity
 import net.gridtech.machine.model.entityClass.ModbusUnitClass
 
 
-class ModbusUnit(node: INode) : IEntity(node) {
-
-    val modbusDefinition = getEntityClass<ModbusUnitClass>().modbusUnitDescription
+class ModbusUnit(node: INode) : IEntity<ModbusUnitClass>(node) {
 
     companion object {
         val tags = listOf("modbus unit")
@@ -22,7 +20,7 @@ class ModbusUnit(node: INode) : IEntity(node) {
                 add(
                         id = generateId(),
                         parentId = parentId,
-                        nodeClassId = modbusUnitClass.source.id,
+                        nodeClassId = modbusUnitClass.id,
                         name = name,
                         alias = alias,
                         tags = tags,

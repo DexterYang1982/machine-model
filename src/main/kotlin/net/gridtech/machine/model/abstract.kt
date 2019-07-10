@@ -4,7 +4,10 @@ import io.reactivex.Observable
 import io.reactivex.ObservableEmitter
 import io.reactivex.ObservableOnSubscribe
 import net.gridtech.core.data.*
-import net.gridtech.core.util.*
+import net.gridtech.core.util.APIExceptionEnum
+import net.gridtech.core.util.cast
+import net.gridtech.core.util.compose
+import net.gridtech.core.util.stringfy
 import net.gridtech.machine.model.entityField.CustomField
 import net.gridtech.machine.model.property.field.ValueDescription
 
@@ -14,6 +17,7 @@ abstract class IBaseStructure<T : IStructureData>(val id: String) {
     }
 
     open fun getDescriptionProperty(): IBaseProperty<*, T>? = null
+
     val name = object : IBaseProperty<String, IStructureData>({ structure ->
         structure.name
     }) {}
@@ -62,29 +66,61 @@ abstract class IBaseStructure<T : IStructureData>(val id: String) {
 abstract class IEntityClass(id: String) : IBaseStructure<INodeClass>(id) {
     private val embeddedFields = ArrayList<IEmbeddedEntityField<*>>()
     override fun initialize(initData: INodeClass?) {
-        super.initialize(initData)
         javaClass.methods.filter { method ->
             method.name.startsWith("get") && method.returnType == IEmbeddedEntityField::class.java
         }.forEach { method ->
             embeddedFields.add(method.invoke(this) as IEmbeddedEntityField<*>)
         }
-        embeddedFields.forEach { field ->
-            DataHolder.instance.entityFieldHolder[field.id] = field
+        if (initData != null) {
+            embeddedFields.forEach { field ->
+                DataHolder.instance.entityFieldHolder[field.id] = field
+            }
+        }
+        super.initialize(initData)
+    }
+
+    fun addNewEntity(entityId: String,
+                     parentId: String,
+                     name: String,
+                     alias: String,
+                     tags: List<String>,
+                     externalNodeIdScope: List<String>,
+                     externalNodeClassTagScope: List<String>,
+                     description: Any?): INode? {
+        val nodeTags = tags.toMutableList()
+        nodeTags.add(DataHolder.instance.domainNodeId ?: "")
+        return DataHolder.instance.manager?.nodeAdd(
+                id = entityId,
+                nodeClassId = id,
+                name = name,
+                alias = alias,
+                parentId = parentId,
+                externalNodeIdScope = externalNodeIdScope,
+                externalNodeClassTagScope = externalNodeClassTagScope,
+                tags = nodeTags,
+                description = description
+        )?.apply {
+            embeddedFields.forEach { field ->
+                field.setDefaultValueToEntity(this.id)
+            }
         }
     }
 
-    companion object {
-        fun add(name: String, alias: String, connectable: Boolean, tags: List<String>, description: Any?): INodeClass? {
-            val nodeClassTags = tags.toMutableList()
-            nodeClassTags.add(DataHolder.instance.domainNodeId ?: "")
-            return DataHolder.instance.manager?.nodeClassAdd(
-                    id = generateId(),
-                    name = name,
-                    alias = alias,
-                    connectable = connectable,
-                    tags = nodeClassTags,
-                    description = description
-            )
+    protected fun addNew(name: String, alias: String, tags: List<String>, connectable: Boolean): INodeClass? {
+        val nodeClassTags = tags.toMutableList()
+        nodeClassTags.add(DataHolder.instance.domainNodeId ?: "")
+        return DataHolder.instance.manager?.nodeClassAdd(
+                id = id,
+                name = name,
+                alias = alias,
+                connectable = connectable,
+                tags = nodeClassTags,
+                description = getDescriptionProperty()?.value
+        )?.apply {
+            embeddedFields.forEach { field ->
+                if (field.autoAdd())
+                    field.addNew()
+            }
         }
     }
 
@@ -103,8 +139,10 @@ abstract class IEntityClass(id: String) : IBaseStructure<INodeClass>(id) {
 }
 
 abstract class IEntityField<T>(id: String) : IBaseStructure<IField>(id) {
+    abstract fun createFieldValue(entityId: String): EntityFieldValue<T>
+
     companion object {
-        fun add(key: String, nodeClassId: String, name: String, alias: String, tags: List<String>, through: Boolean, description: Any?): IField? {
+        fun addNew(key: String, nodeClassId: String, name: String, alias: String, tags: List<String>, through: Boolean, description: Any?): IField? {
             val fieldTags = tags.toMutableList()
             fieldTags.add(DataHolder.instance.domainNodeId ?: "")
             return DataHolder.instance.manager?.fieldAdd(
@@ -118,8 +156,6 @@ abstract class IEntityField<T>(id: String) : IBaseStructure<IField>(id) {
             )
         }
     }
-
-    abstract fun createFieldValue(entityId: String): EntityFieldValue<T>
 
     fun getFieldValue(entityId: String): EntityFieldValue<T> {
         val fieldValueId = compose(entityId, id)
@@ -142,40 +178,33 @@ abstract class IEntityField<T>(id: String) : IBaseStructure<IField>(id) {
     override fun doDelete() {
         DataHolder.instance.manager?.fieldDelete(id)
     }
+
+
 }
 
-abstract class IEmbeddedEntityField<T>(id: String) : IEntityField<T>(id)
+abstract class IEmbeddedEntityField<T>(val nodeClassId: String, private val key: String) : IEntityField<T>(compose(nodeClassId, key)) {
+    open fun defaultValue(): T? = null
+    open fun autoAdd(): Boolean = false
+    open fun addNew() {}
+    fun addNew(name: String, alias: String, tags: List<String>, through: Boolean, description: Any?): IField? {
+        return addNew(key, nodeClassId, name, alias, tags, through, description)
+    }
+
+    fun setDefaultValueToEntity(entityId: String) =
+            defaultValue()?.apply {
+                createFieldValue(entityId).update(this)
+            }
+}
 
 abstract class IEntity<T>(node: INode) : IBaseStructure<INode>(node.id) {
     val entityClass: T = cast(DataHolder.instance.entityClassHolder[node.nodeClassId])!!
+
     init {
         super.initialize(node)
     }
 
-    companion object {
-        fun add(id: String, parentId: String, nodeClassId: String, name: String, alias: String, tags: List<String>,
-                externalNodeIdScope: List<String>,
-                externalNodeClassTagScope: List<String>,
-                description: Any?): INode? {
-            val nodeTags = tags.toMutableList()
-            nodeTags.add(DataHolder.instance.domainNodeId ?: "")
-            return DataHolder.instance.manager?.nodeAdd(
-                    id = id,
-                    nodeClassId = nodeClassId,
-                    name = name,
-                    alias = alias,
-                    parentId = parentId,
-                    externalNodeIdScope = externalNodeIdScope,
-                    externalNodeClassTagScope = externalNodeClassTagScope,
-                    tags = nodeTags,
-                    description = description
-            )
-        }
-    }
-
     fun getCustomFieldValue(fieldId: String): EntityFieldValue<ValueDescription>? =
-            cast<CustomField>(DataHolder.instance.entityFieldHolder[fieldId])?.getFieldValue(this.source.id)
-
+            cast<CustomField>(DataHolder.instance.entityFieldHolder[fieldId])?.getFieldValue(this.id)
 
     override fun update(name: String, alias: String, description: Any?) {
         DataHolder.instance.manager?.nodeUpdate(

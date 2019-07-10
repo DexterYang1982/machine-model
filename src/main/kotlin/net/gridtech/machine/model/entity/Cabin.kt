@@ -5,21 +5,14 @@ import net.gridtech.core.util.generateId
 import net.gridtech.machine.model.IBaseProperty
 import net.gridtech.machine.model.IEntity
 import net.gridtech.machine.model.entityClass.CabinClass
-import net.gridtech.machine.model.entityField.CabinEmptyField
-import net.gridtech.machine.model.entityField.CabinStorageField
 import net.gridtech.machine.model.property.entity.CabinDefinition
 import net.gridtech.machine.model.property.entity.CabinDefinitionDescription
 
 
-class Cabin(node: INode) : IEntity(node) {
+class Cabin(node: INode) : IEntity<CabinClass>(node) {
 
-    val cabinDefinition = CabinDefinitionDescription(this)
-    override fun getDescriptionProperty(): IBaseProperty<*, INode>? = cabinDefinition
-
-    val cabinStorage
-        get() = getEntityField<CabinStorageField>(source.nodeClassId, CabinStorageField.key).getFieldValue(source.id)
-    val cabinEmpty
-        get() = getEntityField<CabinEmptyField>(source.nodeClassId, CabinEmptyField.key).getFieldValue(source.id)
+    val description = CabinDefinitionDescription(this)
+    override fun getDescriptionProperty(): IBaseProperty<*, INode>? = description
 
     companion object {
         val tags = listOf("cabin")
@@ -33,7 +26,7 @@ class Cabin(node: INode) : IEntity(node) {
                 add(
                         id = generateId(),
                         parentId = parentId,
-                        nodeClassId = cabinClass.source.id,
+                        nodeClassId = cabinClass.id,
                         name = name,
                         alias = alias,
                         tags = tags,
@@ -41,10 +34,6 @@ class Cabin(node: INode) : IEntity(node) {
                         externalNodeClassTagScope = emptyList(),
                         description = CabinDefinition.empty()
                 )?.apply {
-                    getEntityField<CabinStorageField>(cabinClass.source.id, CabinStorageField.key)
-                            .createFieldValue(this.id).update(emptyList())
-                    getEntityField<CabinEmptyField>(cabinClass.source.id, CabinEmptyField.key)
-                            .createFieldValue(this.id).update(false)
                 }
     }
 }

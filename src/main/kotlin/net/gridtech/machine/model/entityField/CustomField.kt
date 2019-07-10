@@ -10,8 +10,8 @@ import net.gridtech.machine.model.property.field.FieldDescriptionProperty
 import net.gridtech.machine.model.property.field.ValueDescription
 
 class CustomField(field: IField) : IEntityField<ValueDescription>(field.id) {
-    val valueDescriptionProperty = FieldDescriptionProperty(this)
-    override fun getDescriptionProperty(): IBaseProperty<*, IField>? = valueDescriptionProperty
+    val description = FieldDescriptionProperty(this)
+    override fun getDescriptionProperty(): IBaseProperty<*, IField>? = description
 
     companion object {
         private val tags = listOf("custom field")
@@ -21,21 +21,21 @@ class CustomField(field: IField) : IEntityField<ValueDescription>(field.id) {
                 else
                     null
 
-        fun add(entityClassId: String, name: String, alias: String) {
-            add(
-                    "custom-${generateId()}",
-                    entityClassId,
-                    name,
-                    alias,
-                    tags,
-                    true,
-                    FieldDescription.empty())
-        }
+        fun addNew(entityClassId: String, name: String, alias: String): IField? =
+                addNew(
+                        "custom-${generateId()}",
+                        entityClassId,
+                        name,
+                        alias,
+                        tags,
+                        true,
+                        FieldDescription.empty()
+                )
     }
 
     override fun createFieldValue(entityId: String): EntityFieldValue<ValueDescription> =
             object : EntityFieldValue<ValueDescription>(entityId, id, { fieldValue ->
-                valueDescriptionProperty.value?.valueDescriptions
+                description.value?.valueDescriptions
                         ?.find { Regex(it.valueExp).matches(fieldValue.value) }
                         ?: ValueDescription.create(fieldValue)
             }) {}

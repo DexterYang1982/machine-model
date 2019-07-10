@@ -1,13 +1,15 @@
 package net.gridtech.machine.model.entityField
 
 import net.gridtech.core.util.KEY_FIELD_SECRET
-import net.gridtech.core.util.compose
 import net.gridtech.machine.model.EntityFieldValue
 import net.gridtech.machine.model.IEmbeddedEntityField
 import net.gridtech.machine.model.IEntityClass
 
 
-class SecretField(entityClass: IEntityClass) : IEmbeddedEntityField<String>(compose(entityClass.id, RunningStatusField.key)) {
+class SecretField(entityClass: IEntityClass) : IEmbeddedEntityField<String>(entityClass.id, key) {
+    override fun defaultValue(): String = ""
+    override fun autoAdd(): Boolean = false
+
     companion object {
         const val key = KEY_FIELD_SECRET
     }

@@ -3,23 +3,30 @@ package net.gridtech.machine.model.entityClass
 import net.gridtech.core.data.INodeClass
 import net.gridtech.machine.model.IBaseProperty
 import net.gridtech.machine.model.IEntityClass
+import net.gridtech.machine.model.entityField.RunningStatusField
+import net.gridtech.machine.model.entityField.SecretField
 import net.gridtech.machine.model.property.entityClass.DisplayClientVersionDescription
 
 
-class DisplayClass(nodeClass: INodeClass) : IEntityClass(nodeClass) {
+class DisplayClass(id: String) : IEntityClass(id) {
 
-    val displayClientVersionDescription = DisplayClientVersionDescription(this)
-    override fun getDescriptionProperty(): IBaseProperty<*, INodeClass>? = displayClientVersionDescription
+    val description = DisplayClientVersionDescription(this)
+    override fun getDescriptionProperty(): IBaseProperty<*, INodeClass>? = description
+
+    val runningStatus = RunningStatusField(this)
+    val secret = SecretField(this)
+
+
+    fun addNew(name: String, alias: String) {
+        addNew(name, alias, tags, false)
+    }
 
     companion object {
         val tags = listOf("display class")
         fun create(nodeClass: INodeClass): DisplayClass? =
                 if (nodeClass.tags.containsAll(tags))
-                    DisplayClass(nodeClass)
+                    DisplayClass(nodeClass.id).apply { initialize(nodeClass) }
                 else
                     null
-
-        fun add(name: String, alias: String) =
-                add(name, alias, true, tags, null)
     }
 }

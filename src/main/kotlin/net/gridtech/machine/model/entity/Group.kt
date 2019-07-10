@@ -6,8 +6,7 @@ import net.gridtech.machine.model.IEntity
 import net.gridtech.machine.model.entityClass.GroupClass
 
 
-class Group(node: INode) : IEntity(node) {
-
+class Group(node: INode) : IEntity<GroupClass>(node) {
 
     companion object {
         val tags = listOf("group")
@@ -21,7 +20,7 @@ class Group(node: INode) : IEntity(node) {
                 add(
                         id = generateId(),
                         parentId = parentId,
-                        nodeClassId = groupClass.source.id,
+                        nodeClassId = groupClass.id,
                         name = name,
                         alias = alias,
                         tags = tags,

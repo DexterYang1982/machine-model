@@ -4,14 +4,16 @@ import io.reactivex.subjects.PublishSubject
 import net.gridtech.core.data.IFieldValue
 import net.gridtech.core.util.INTERVAL_RUNNING_STATUS_REPORT
 import net.gridtech.core.util.KEY_FIELD_RUNNING_STATUS
-import net.gridtech.core.util.compose
 import net.gridtech.core.util.currentTime
 import net.gridtech.machine.model.EntityFieldValue
 import net.gridtech.machine.model.IEmbeddedEntityField
 import net.gridtech.machine.model.IEntityClass
 import java.util.concurrent.TimeUnit
 
-class RunningStatusField(entityClass: IEntityClass) : IEmbeddedEntityField<Boolean>(compose(entityClass.id, key)) {
+class RunningStatusField(entityClass: IEntityClass) : IEmbeddedEntityField<Boolean>(entityClass.id, key) {
+    override fun defaultValue(): Boolean = false
+    override fun autoAdd(): Boolean = false
+
     companion object {
         const val key = KEY_FIELD_RUNNING_STATUS
     }
