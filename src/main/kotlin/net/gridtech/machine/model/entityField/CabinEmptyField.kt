@@ -8,7 +8,8 @@ import net.gridtech.machine.model.IEntityClass
 
 class CabinEmptyField(entityClass: IEntityClass) : IEmbeddedEntityField<Boolean>(entityClass.id, key) {
     override fun defaultValue(): Boolean = false
-    override fun autoAdd(): Boolean = true
+    override fun autoAddNew(): Boolean = true
+    override fun autoInitValue(): Boolean = true
 
     override fun addNew() {
         addNew(

@@ -8,7 +8,8 @@ import net.gridtech.machine.model.IEntityClass
 
 class CabinStorageField(entityClass: IEntityClass) : IEmbeddedEntityField<List<String>>(entityClass.id, key) {
     override fun defaultValue(): List<String> = emptyList()
-    override fun autoAdd(): Boolean = true
+    override fun autoAddNew(): Boolean = true
+    override fun autoInitValue(): Boolean = true
 
     override fun addNew() {
         addNew(

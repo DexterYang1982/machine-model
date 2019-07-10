@@ -76,7 +76,6 @@ abstract class IEntityClass(id: String) : IBaseStructure<INodeClass>(id) {
                 DataHolder.instance.entityFieldHolder[field.id] = field
             }
         }
-        println("${initData?.name} ${embeddedFields.size}")
         super.initialize(initData)
     }
 
@@ -93,7 +92,7 @@ abstract class IEntityClass(id: String) : IBaseStructure<INodeClass>(id) {
                 description = getDescriptionProperty()?.value
         )?.apply {
             embeddedFields.forEach { field ->
-                if (field.autoAdd())
+                if (field.autoAddNew())
                     field.addNew()
             }
         }
@@ -159,7 +158,8 @@ abstract class IEntityField<T>(id: String) : IBaseStructure<IField>(id) {
 
 abstract class IEmbeddedEntityField<T>(private val nodeClassId: String, private val key: String) : IEntityField<T>(compose(nodeClassId, key)) {
     open fun defaultValue(): T? = null
-    open fun autoAdd(): Boolean = false
+    open fun autoAddNew(): Boolean = false
+    open fun autoInitValue(): Boolean = false
     open fun addNew() {}
     fun addNew(name: String, alias: String, tags: List<String>, through: Boolean, description: Any?): IField? {
         return addNew(key, nodeClassId, name, alias, tags, through, description)
@@ -203,7 +203,8 @@ abstract class IEntity<T : IEntityClass> : IBaseStructure<INode> {
                 description = getDescriptionProperty()?.value
         )?.apply {
             entityClass.embeddedFields.forEach { field ->
-                field.setDefaultValueToEntity(this.id)
+                if (field.autoInitValue())
+                    field.setDefaultValueToEntity(this.id)
             }
         }
     }

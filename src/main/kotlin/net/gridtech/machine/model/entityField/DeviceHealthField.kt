@@ -7,7 +7,8 @@ import net.gridtech.machine.model.IEntityClass
 
 class DeviceHealthField(entityClass: IEntityClass) : IEmbeddedEntityField<Boolean>(entityClass.id, key) {
     override fun defaultValue(): Boolean = true
-    override fun autoAdd(): Boolean = true
+    override fun autoAddNew(): Boolean = true
+    override fun autoInitValue(): Boolean = true
     override fun addNew() {
         addNew(
                 "device healthy",

@@ -7,8 +7,9 @@ import net.gridtech.machine.model.IEntityClass
 
 
 class SecretField(entityClass: IEntityClass) : IEmbeddedEntityField<String>(entityClass.id, key) {
-    override fun defaultValue(): String = ""
-    override fun autoAdd(): Boolean = false
+    override fun defaultValue(): String = "123456"
+    override fun autoAddNew(): Boolean = false
+    override fun autoInitValue(): Boolean = true
 
     companion object {
         const val key = KEY_FIELD_SECRET
