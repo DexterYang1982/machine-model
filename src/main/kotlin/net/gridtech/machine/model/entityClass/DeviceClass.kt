@@ -7,9 +7,8 @@ import net.gridtech.machine.model.entityField.DeviceHealthField
 class DeviceClass(id: String) : IEntityClass(id) {
     val healthy = DeviceHealthField(this)
 
-    fun addNew(name: String, alias: String) {
+    fun addNew(name: String, alias: String) =
         addNew(name, alias, tags, false)
-    }
 
     companion object {
         val tags = listOf("device class")

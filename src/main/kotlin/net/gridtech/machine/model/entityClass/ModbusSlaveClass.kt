@@ -7,9 +7,8 @@ import net.gridtech.machine.model.entityField.ModbusSlaveConnectionField
 class ModbusSlaveClass(id: String) : IEntityClass(id) {
     val connection = ModbusSlaveConnectionField(this)
 
-    fun addNew(name: String, alias: String) {
+    fun addNew(name: String, alias: String) =
         addNew(name, alias, tags, false)
-    }
 
     companion object {
         val tags = listOf("modbus slave class")

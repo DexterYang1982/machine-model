@@ -67,7 +67,7 @@ abstract class IEntityClass(id: String) : IBaseStructure<INodeClass>(id) {
     val embeddedFields = ArrayList<IEmbeddedEntityField<*>>()
     override fun initialize(initData: INodeClass?) {
         javaClass.methods.filter { method ->
-            method.name.startsWith("get") && method.returnType == IEmbeddedEntityField::class.java
+            method.name.startsWith("get") && method.returnType.superclass == IEmbeddedEntityField::class.java
         }.forEach { method ->
             embeddedFields.add(method.invoke(this) as IEmbeddedEntityField<*>)
         }
@@ -76,6 +76,7 @@ abstract class IEntityClass(id: String) : IBaseStructure<INodeClass>(id) {
                 DataHolder.instance.entityFieldHolder[field.id] = field
             }
         }
+        println("${initData?.name} ${embeddedFields.size}")
         super.initialize(initData)
     }
 

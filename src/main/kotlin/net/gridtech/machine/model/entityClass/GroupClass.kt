@@ -4,9 +4,8 @@ import net.gridtech.core.data.INodeClass
 import net.gridtech.machine.model.IEntityClass
 
 class GroupClass(id: String) : IEntityClass(id) {
-    fun addNew(name: String, alias: String) {
+    fun addNew(name: String, alias: String) =
         addNew(name, alias, tags, false)
-    }
 
     companion object {
         val tags = listOf("group class")

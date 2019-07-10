@@ -10,9 +10,8 @@ class CabinClass(id: String) : IEntityClass(id) {
     val empty = CabinEmptyField(this)
     val storage = CabinStorageField(this)
 
-    fun addNew(name: String, alias: String) {
+    fun addNew(name: String, alias: String) =
         addNew(name, alias, tags, false)
-    }
 
     companion object {
         val tags = listOf("cabin class")

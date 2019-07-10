@@ -17,9 +17,8 @@ class DisplayClass(id: String) : IEntityClass(id) {
     val secret = SecretField(this)
 
 
-    fun addNew(name: String, alias: String) {
+    fun addNew(name: String, alias: String) =
         addNew(name, alias, tags, false)
-    }
 
     companion object {
         val tags = listOf("display class")
