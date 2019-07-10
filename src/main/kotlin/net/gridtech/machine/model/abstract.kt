@@ -64,7 +64,7 @@ abstract class IBaseStructure<T : IStructureData>(val id: String) {
 }
 
 abstract class IEntityClass(id: String) : IBaseStructure<INodeClass>(id) {
-    private val embeddedFields = ArrayList<IEmbeddedEntityField<*>>()
+    val embeddedFields = ArrayList<IEmbeddedEntityField<*>>()
     override fun initialize(initData: INodeClass?) {
         javaClass.methods.filter { method ->
             method.name.startsWith("get") && method.returnType == IEmbeddedEntityField::class.java
@@ -79,32 +79,6 @@ abstract class IEntityClass(id: String) : IBaseStructure<INodeClass>(id) {
         super.initialize(initData)
     }
 
-    fun addNewEntity(entityId: String,
-                     parentId: String,
-                     name: String,
-                     alias: String,
-                     tags: List<String>,
-                     externalNodeIdScope: List<String>,
-                     externalNodeClassTagScope: List<String>,
-                     description: Any?): INode? {
-        val nodeTags = tags.toMutableList()
-        nodeTags.add(DataHolder.instance.domainNodeId ?: "")
-        return DataHolder.instance.manager?.nodeAdd(
-                id = entityId,
-                nodeClassId = id,
-                name = name,
-                alias = alias,
-                parentId = parentId,
-                externalNodeIdScope = externalNodeIdScope,
-                externalNodeClassTagScope = externalNodeClassTagScope,
-                tags = nodeTags,
-                description = description
-        )?.apply {
-            embeddedFields.forEach { field ->
-                field.setDefaultValueToEntity(this.id)
-            }
-        }
-    }
 
     protected fun addNew(name: String, alias: String, tags: List<String>, connectable: Boolean): INodeClass? {
         val nodeClassTags = tags.toMutableList()
@@ -182,7 +156,7 @@ abstract class IEntityField<T>(id: String) : IBaseStructure<IField>(id) {
 
 }
 
-abstract class IEmbeddedEntityField<T>(val nodeClassId: String, private val key: String) : IEntityField<T>(compose(nodeClassId, key)) {
+abstract class IEmbeddedEntityField<T>(private val nodeClassId: String, private val key: String) : IEntityField<T>(compose(nodeClassId, key)) {
     open fun defaultValue(): T? = null
     open fun autoAdd(): Boolean = false
     open fun addNew() {}
@@ -196,11 +170,41 @@ abstract class IEmbeddedEntityField<T>(val nodeClassId: String, private val key:
             }
 }
 
-abstract class IEntity<T>(node: INode) : IBaseStructure<INode>(node.id) {
-    val entityClass: T = cast(DataHolder.instance.entityClassHolder[node.nodeClassId])!!
+abstract class IEntity<T : IEntityClass> : IBaseStructure<INode> {
+    val entityClass: T
 
-    init {
+    constructor(node: INode) : super(node.id) {
+        entityClass = cast(DataHolder.instance.entityClassHolder[node.nodeClassId])!!
         super.initialize(node)
+    }
+
+    constructor(id: String, t: T) : super(id) {
+        entityClass = t
+    }
+
+    protected fun addNew(parentId: String,
+                         name: String,
+                         alias: String,
+                         tags: List<String>,
+                         externalNodeIdScope: List<String>,
+                         externalNodeClassTagScope: List<String>): INode? {
+        val nodeTags = tags.toMutableList()
+        nodeTags.add(DataHolder.instance.domainNodeId ?: "")
+        return DataHolder.instance.manager?.nodeAdd(
+                id = id,
+                nodeClassId = entityClass.id,
+                name = name,
+                alias = alias,
+                parentId = parentId,
+                externalNodeIdScope = externalNodeIdScope,
+                externalNodeClassTagScope = externalNodeClassTagScope,
+                tags = nodeTags,
+                description = getDescriptionProperty()?.value
+        )?.apply {
+            entityClass.embeddedFields.forEach { field ->
+                field.setDefaultValueToEntity(this.id)
+            }
+        }
     }
 
     fun getCustomFieldValue(fieldId: String): EntityFieldValue<ValueDescription>? =

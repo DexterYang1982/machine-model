@@ -1,12 +1,23 @@
 package net.gridtech.machine.model.entity
 
 import net.gridtech.core.data.INode
-import net.gridtech.core.util.generateId
 import net.gridtech.machine.model.IEntity
 import net.gridtech.machine.model.entityClass.DisplayClass
 
 
-class Display(node: INode) : IEntity<DisplayClass>(node) {
+class Display : IEntity<DisplayClass> {
+    constructor(node: INode) : super(node)
+    constructor(id: String, t: DisplayClass) : super(id, t)
+
+    fun addNew(parentId: String, name: String, alias: String) =
+            addNew(
+                    parentId,
+                    name,
+                    alias,
+                    tags,
+                    emptyList(),
+                    emptyList()
+            )
 
     companion object {
         val tags = listOf("display")
@@ -16,17 +27,5 @@ class Display(node: INode) : IEntity<DisplayClass>(node) {
                 else
                     null
 
-        fun add(displayClass: DisplayClass, parentId: String, name: String, alias: String) =
-                add(
-                        id = generateId(),
-                        parentId = parentId,
-                        nodeClassId = displayClass.id,
-                        name = name,
-                        alias = alias,
-                        tags = tags,
-                        externalNodeIdScope = emptyList(),
-                        externalNodeClassTagScope = emptyList(),
-                        description = null
-                )
     }
 }

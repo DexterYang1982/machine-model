@@ -1,12 +1,23 @@
 package net.gridtech.machine.model.entity
 
 import net.gridtech.core.data.INode
-import net.gridtech.core.util.generateId
 import net.gridtech.machine.model.IEntity
 import net.gridtech.machine.model.entityClass.GroupClass
 
 
-class Group(node: INode) : IEntity<GroupClass>(node) {
+class Group : IEntity<GroupClass> {
+    constructor(node: INode) : super(node)
+    constructor(id: String, t: GroupClass) : super(id, t)
+
+    fun addNew(parentId: String, name: String, alias: String) =
+            addNew(
+                    parentId,
+                    name,
+                    alias,
+                    tags,
+                    emptyList(),
+                    emptyList()
+            )
 
     companion object {
         val tags = listOf("group")
@@ -15,18 +26,5 @@ class Group(node: INode) : IEntity<GroupClass>(node) {
                     Group(node)
                 else
                     null
-
-        fun add(groupClass: GroupClass, parentId: String, name: String, alias: String) =
-                add(
-                        id = generateId(),
-                        parentId = parentId,
-                        nodeClassId = groupClass.id,
-                        name = name,
-                        alias = alias,
-                        tags = tags,
-                        externalNodeIdScope = emptyList(),
-                        externalNodeClassTagScope = emptyList(),
-                        description = null
-                )
     }
 }

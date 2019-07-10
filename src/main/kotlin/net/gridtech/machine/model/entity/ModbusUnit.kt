@@ -1,12 +1,23 @@
 package net.gridtech.machine.model.entity
 
 import net.gridtech.core.data.INode
-import net.gridtech.core.util.generateId
 import net.gridtech.machine.model.IEntity
 import net.gridtech.machine.model.entityClass.ModbusUnitClass
 
 
-class ModbusUnit(node: INode) : IEntity<ModbusUnitClass>(node) {
+class ModbusUnit : IEntity<ModbusUnitClass> {
+    constructor(node: INode) : super(node)
+    constructor(id: String, t: ModbusUnitClass) : super(id, t)
+
+    fun addNew(parentId: String, name: String, alias: String) =
+            addNew(
+                    parentId,
+                    name,
+                    alias,
+                    tags,
+                    emptyList(),
+                    emptyList()
+            )
 
     companion object {
         val tags = listOf("modbus unit")
@@ -16,17 +27,5 @@ class ModbusUnit(node: INode) : IEntity<ModbusUnitClass>(node) {
                 else
                     null
 
-        fun add(modbusUnitClass: ModbusUnitClass, parentId: String, name: String, alias: String) =
-                add(
-                        id = generateId(),
-                        parentId = parentId,
-                        nodeClassId = modbusUnitClass.id,
-                        name = name,
-                        alias = alias,
-                        tags = tags,
-                        externalNodeIdScope = emptyList(),
-                        externalNodeClassTagScope = emptyList(),
-                        description = null
-                )
     }
 }
