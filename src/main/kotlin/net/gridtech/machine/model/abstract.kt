@@ -3,6 +3,8 @@ package net.gridtech.machine.model
 import io.reactivex.Observable
 import io.reactivex.ObservableEmitter
 import io.reactivex.ObservableOnSubscribe
+import io.reactivex.Single
+import io.reactivex.subjects.PublishSubject
 import net.gridtech.core.data.*
 import net.gridtech.core.util.APIExceptionEnum
 import net.gridtech.core.util.cast
@@ -47,19 +49,26 @@ abstract class IBaseStructure<T : IStructureData>(val id: String) {
                 update(this.name, this.alias, description)
             }
 
-    fun onDelete() {
-        name.onDelete()
-        alias.onDelete()
-        getDescriptionProperty()?.onDelete()
+    fun delete() {
+        name.delete()
+        alias.delete()
+        getDescriptionProperty()?.delete()
+        deletePublisher.onNext(this)
     }
+
+    fun onDelete(): Single<*> = deletePublisher.filter { it.id == id }.firstOrError()
 
     abstract fun doDelete()
 
-    fun delete() {
+    fun tryToDelete() {
         source?.apply {
             APIExceptionEnum.ERR10_CAN_NOT_BE_DELETED.assert(DataHolder.instance.checkDependency(id))
             doDelete()
         }
+    }
+
+    companion object {
+        val deletePublisher = PublishSubject.create<IBaseStructure<*>>()
     }
 }
 
@@ -81,14 +90,12 @@ abstract class IEntityClass(id: String) : IBaseStructure<INodeClass>(id) {
 
 
     protected fun addNew(name: String, alias: String, tags: List<String>, connectable: Boolean): INodeClass? {
-        val nodeClassTags = tags.toMutableList()
-        nodeClassTags.add(DataHolder.instance.domainNodeId ?: "")
         return DataHolder.instance.manager?.nodeClassAdd(
                 id = id,
                 name = name,
                 alias = alias,
                 connectable = connectable,
-                tags = nodeClassTags,
+                tags = tags,
                 description = getDescriptionProperty()?.value
         )?.apply {
             embeddedFields.forEach { field ->
@@ -117,24 +124,22 @@ abstract class IEntityField<T>(id: String) : IBaseStructure<IField>(id) {
 
     companion object {
         fun addNew(key: String, nodeClassId: String, name: String, alias: String, tags: List<String>, through: Boolean, description: Any?): IField? {
-            val fieldTags = tags.toMutableList()
-            fieldTags.add(DataHolder.instance.domainNodeId ?: "")
             return DataHolder.instance.manager?.fieldAdd(
                     key = key,
                     nodeClassId = nodeClassId,
                     name = name,
                     alias = alias,
                     through = through,
-                    tags = fieldTags,
+                    tags = tags,
                     description = description
             )
         }
     }
 
-    fun getFieldValue(entityId: String): EntityFieldValue<T> {
-        val fieldValueId = compose(entityId, id)
+    fun getFieldValue(entity: IEntity<*>): EntityFieldValue<T> {
+        val fieldValueId = compose(entity.id, id)
         return cast(DataHolder.instance.entityFieldValueHolder.getOrPut(fieldValueId) {
-            val entityFieldValue = createFieldValue(entityId)
+            val entityFieldValue = createFieldValue(entity.id)
             entityFieldValue.source = DataHolder.instance.bootstrap.fieldValueService.getById(fieldValueId)
             entityFieldValue
         })!!
@@ -189,8 +194,6 @@ abstract class IEntity<T : IEntityClass> : IBaseStructure<INode> {
                          tags: List<String>,
                          externalNodeIdScope: List<String>,
                          externalNodeClassTagScope: List<String>): INode? {
-        val nodeTags = tags.toMutableList()
-        nodeTags.add(DataHolder.instance.domainNodeId ?: "")
         return DataHolder.instance.manager?.nodeAdd(
                 id = id,
                 nodeClassId = entityClass.id,
@@ -199,7 +202,7 @@ abstract class IEntity<T : IEntityClass> : IBaseStructure<INode> {
                 parentId = parentId,
                 externalNodeIdScope = externalNodeIdScope,
                 externalNodeClassTagScope = externalNodeClassTagScope,
-                tags = nodeTags,
+                tags = tags,
                 description = getDescriptionProperty()?.value
         )?.apply {
             entityClass.embeddedFields.forEach { field ->
@@ -210,7 +213,7 @@ abstract class IEntity<T : IEntityClass> : IBaseStructure<INode> {
     }
 
     fun getCustomFieldValue(fieldId: String): EntityFieldValue<ValueDescription>? =
-            cast<CustomField>(DataHolder.instance.entityFieldHolder[fieldId])?.getFieldValue(this.id)
+            cast<CustomField>(DataHolder.instance.entityFieldHolder[fieldId])?.getFieldValue(this)
 
     override fun update(name: String, alias: String, description: Any?) {
         DataHolder.instance.manager?.nodeUpdate(
@@ -291,7 +294,7 @@ abstract class IBaseProperty<T, U : IBaseData>(private val castFunction: (raw: U
         emitters.add(emitter)
     }
 
-    open fun onDelete() {
+    open fun delete() {
         emitters.forEach {
             if (!it.isDisposed)
                 it.onComplete()
@@ -301,19 +304,19 @@ abstract class IBaseProperty<T, U : IBaseData>(private val castFunction: (raw: U
 }
 
 open class EntityFieldValue<T>(private val nodeId: String, private val fieldId: String, castFunction: (raw: IFieldValue) -> T) : IBaseProperty<T, IFieldValue>(castFunction) {
-    val session: String?
-        get() = source?.session
-    val updateTime: Long?
-        get() = source?.updateTime
+    val session: String
+        get() = source?.session ?: ""
+    val updateTime: Long
+        get() = source?.updateTime ?: -1
 
-    fun update(v: T, session: String? = null) =
+    fun update(v: Any, session: String? = null) =
             DataHolder.instance.bootstrap.fieldValueService.setFieldValue(
                     nodeId,
                     fieldId,
                     if (v is String)
                         v
                     else
-                        stringfy(v as Any),
+                        stringfy(v),
                     session)
 
 }

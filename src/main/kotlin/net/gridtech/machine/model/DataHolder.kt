@@ -11,7 +11,7 @@ import net.gridtech.machine.model.entityClass.*
 import net.gridtech.machine.model.entityField.CustomField
 import net.gridtech.machine.model.entityField.TriggerField
 
-class DataHolder(val bootstrap: Bootstrap, val domainNodeId: String? = null, val domainNodeClassId: String? = null, val manager: IManager? = null) {
+class DataHolder(val bootstrap: Bootstrap, val manager: IManager? = null) {
     val entityClassHolder = HashMap<String, IEntityClass>()
     val entityFieldHolder = HashMap<String, IEntityField<*>>()
     val entityHolder = HashMap<String, IEntity<*>>()
@@ -43,7 +43,7 @@ class DataHolder(val bootstrap: Bootstrap, val domainNodeId: String? = null, val
                             }
                         }
                         ChangedType.DELETE -> {
-                            entityClassHolder.remove(it.second)?.onDelete()
+                            entityClassHolder.remove(it.second)?.delete()
                         }
                     }
                 }
@@ -65,7 +65,7 @@ class DataHolder(val bootstrap: Bootstrap, val domainNodeId: String? = null, val
                             }
                         }
                         ChangedType.DELETE -> {
-                            entityFieldHolder.remove(it.second)?.onDelete()
+                            entityFieldHolder.remove(it.second)?.delete()
                         }
                     }
                 }
@@ -84,7 +84,7 @@ class DataHolder(val bootstrap: Bootstrap, val domainNodeId: String? = null, val
                             }
                         }
                         ChangedType.DELETE -> {
-                            entityHolder.remove(it.second)?.onDelete()
+                            entityHolder.remove(it.second)?.delete()
                         }
                     }
                 }
@@ -95,7 +95,7 @@ class DataHolder(val bootstrap: Bootstrap, val domainNodeId: String? = null, val
                             entityFieldValueHolder[it.second]?.source = it.third
                         }
                         ChangedType.DELETE -> {
-                            entityFieldValueHolder.remove(it.second)?.onDelete()
+                            entityFieldValueHolder.remove(it.second)?.delete()
                         }
                     }
                 }

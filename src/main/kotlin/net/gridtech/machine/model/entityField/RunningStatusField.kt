@@ -38,8 +38,8 @@ class RunningStatusField(entityClass: IEntityClass) : IEmbeddedEntityField<Boole
                     counter.onNext(s)
                 }
 
-                override fun onDelete() {
-                    super.onDelete()
+                override fun delete() {
+                    super.delete()
                     counter.onComplete()
                 }
             }

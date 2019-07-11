@@ -90,7 +90,7 @@ data class ReadPoint(
         var name: String,
         var point: Point,
         var resultFieldId: String,
-        var sessionFollowWritePointKeys: List<String>
+        var sessionFollowWritePoints: List<String>
 ) : IDependOnOthers {
     override fun id(): String = id
     override fun dependence(): List<String> = listOf(resultFieldId)
@@ -122,6 +122,15 @@ enum class MemoryType {
     INPUT_STATUS,
     INPUT_REGISTER
 }
+
+
+enum class CommandResult {
+    ACCEPTED,
+    OFFLINE,
+    EXPIRED,
+    EXCEPTION
+}
+
 
 enum class CommandType {
     INSTANT,
