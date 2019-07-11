@@ -32,6 +32,16 @@ data class EntityWrite(
         var targetId: String,
         var valueDescriptionId: String
 ) : IDependOnOthers {
+    companion object {
+        fun empty() = EntityWrite(
+                "",
+                "",
+                WriteTargetType.DEVICE_COMMAND,
+                "",
+                ""
+
+        )
+    }
     override fun id(): String = id
     override fun dependence(): List<String> = listOf(entityId, targetId, valueDescriptionId)
 }

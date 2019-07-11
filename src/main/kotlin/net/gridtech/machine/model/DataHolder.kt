@@ -9,6 +9,7 @@ import net.gridtech.core.util.cast
 import net.gridtech.machine.model.entity.*
 import net.gridtech.machine.model.entityClass.*
 import net.gridtech.machine.model.entityField.CustomField
+import net.gridtech.machine.model.entityField.TriggerField
 
 class DataHolder(val bootstrap: Bootstrap, val domainNodeId: String? = null, val domainNodeClassId: String? = null, val manager: IManager? = null) {
     val entityClassHolder = HashMap<String, IEntityClass>()
@@ -17,6 +18,8 @@ class DataHolder(val bootstrap: Bootstrap, val domainNodeId: String? = null, val
     val entityFieldValueHolder = HashMap<String, EntityFieldValue<*>>()
 
     private val entityAddedPublisher = PublishSubject.create<IEntity<*>>()
+    private val triggerAddedPublisher = PublishSubject.create<TriggerField>()
+
 
     private val dependencyMap = HashMap<String, List<String>>()
 
@@ -54,6 +57,10 @@ class DataHolder(val bootstrap: Bootstrap, val domainNodeId: String? = null, val
                             } else {
                                 CustomField.create(field)?.apply {
                                     entityFieldHolder[field.id] = this
+                                }
+                                TriggerField.create(field)?.apply {
+                                    entityFieldHolder[field.id] = this
+                                    triggerAddedPublisher.onNext(this)
                                 }
                             }
                         }

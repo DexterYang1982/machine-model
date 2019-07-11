@@ -1,8 +1,10 @@
 package net.gridtech.machine.model.entity
 
 import net.gridtech.core.data.INode
+import net.gridtech.machine.model.IBaseProperty
 import net.gridtech.machine.model.IEntity
 import net.gridtech.machine.model.entityClass.TunnelClass
+import net.gridtech.machine.model.property.entity.TunnelDefinitionDescription
 
 
 class Tunnel : IEntity<TunnelClass> {
@@ -19,6 +21,8 @@ class Tunnel : IEntity<TunnelClass> {
                     emptyList()
             )
 
+    val description = TunnelDefinitionDescription(this)
+    override fun getDescriptionProperty(): IBaseProperty<*, INode>? = description
 
     companion object {
         val tags = listOf("tunnel")

@@ -5,12 +5,12 @@ import net.gridtech.core.util.generateId
 import net.gridtech.machine.model.EntityFieldValue
 import net.gridtech.machine.model.IBaseProperty
 import net.gridtech.machine.model.IEntityField
-import net.gridtech.machine.model.property.field.FieldDescription
-import net.gridtech.machine.model.property.field.FieldDescriptionProperty
+import net.gridtech.machine.model.property.field.FieldValueDescription
+import net.gridtech.machine.model.property.field.CustomFieldDescription
 import net.gridtech.machine.model.property.field.ValueDescription
 
 class CustomField(field: IField) : IEntityField<ValueDescription>(field.id) {
-    val description = FieldDescriptionProperty(this)
+    val description = CustomFieldDescription(this)
     override fun getDescriptionProperty(): IBaseProperty<*, IField>? = description
 
     companion object {
@@ -29,7 +29,7 @@ class CustomField(field: IField) : IEntityField<ValueDescription>(field.id) {
                         alias,
                         tags,
                         true,
-                        FieldDescription.empty()
+                        FieldValueDescription.empty()
                 )
     }
 

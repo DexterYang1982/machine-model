@@ -2,8 +2,10 @@ package net.gridtech.machine.model.entityClass
 
 import net.gridtech.core.data.INodeClass
 import net.gridtech.machine.model.IEntityClass
+import net.gridtech.machine.model.entityField.TunnelCurrentTransactionField
 
 class TunnelClass(id: String) : IEntityClass(id) {
+    val currentTransaction = TunnelCurrentTransactionField(this)
 
     fun addNew(name: String, alias: String) =
             addNew(name, alias, tags, false)
