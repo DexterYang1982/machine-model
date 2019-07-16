@@ -4,7 +4,6 @@ import io.reactivex.Observable
 import io.reactivex.ObservableEmitter
 import io.reactivex.ObservableOnSubscribe
 import io.reactivex.Single
-import io.reactivex.subjects.PublishSubject
 import net.gridtech.core.data.*
 import net.gridtech.core.util.APIExceptionEnum
 import net.gridtech.core.util.cast
@@ -38,6 +37,26 @@ abstract class IBaseStructure<T : IStructureData>(val id: String) {
         }
 
     abstract fun update(name: String, alias: String, description: Any?)
+    abstract fun dataType(): String
+    open fun dataName(): String = javaClass.simpleName
+    abstract fun parentId(): String?
+    abstract fun nodeClassId(): String?
+
+    fun capsule() = StructureDataUpdateCapsule(
+            id = id,
+            dataName = dataName(),
+            dataType = dataType(),
+            updateType = "update",
+            content = stringfy(mapOf(
+                    "id" to id,
+                    "name" to name.value,
+                    "alias" to alias.value,
+                    "description" to getDescriptionProperty()?.value,
+                    "nodeClassId" to nodeClassId(),
+                    "parentId" to parentId()
+            )),
+            updateTime = source?.updateTime ?: -1
+    )
 
     fun updateNameAndAlias(name: String, alias: String) =
             source?.apply {
@@ -53,27 +72,28 @@ abstract class IBaseStructure<T : IStructureData>(val id: String) {
         name.delete()
         alias.delete()
         getDescriptionProperty()?.delete()
-        deletePublisher.onNext(this)
     }
 
-    fun onDelete(): Single<*> = deletePublisher.filter { it.id == id }.firstOrError()
+    fun onDelete(): Single<*> = DataHolder.instance.structureDataChangedPublisher
+            .filter { (type, structure) ->
+                type == StructureDataChangedType.DELETE && structure.id == id
+            }.firstOrError()
 
     abstract fun doDelete()
 
-    fun tryToDelete() {
-        source?.apply {
-            APIExceptionEnum.ERR10_CAN_NOT_BE_DELETED.assert(DataHolder.instance.checkDependency(id))
-            doDelete()
-        }
-    }
-
-    companion object {
-        val deletePublisher = PublishSubject.create<IBaseStructure<*>>()
-    }
+    fun tryToDelete(): Boolean =
+            source?.let {
+                APIExceptionEnum.ERR10_CAN_NOT_BE_DELETED.assert(DataHolder.instance.checkDependency(id))
+                doDelete()
+                true
+            } ?: false
 }
 
 abstract class IEntityClass(id: String) : IBaseStructure<INodeClass>(id) {
     val embeddedFields = ArrayList<IEmbeddedEntityField<*>>()
+    override fun dataType(): String = "EntityClass"
+    override fun parentId(): String? = null
+    override fun nodeClassId(): String? = null
     override fun initialize(initData: INodeClass?) {
         javaClass.methods.filter { method ->
             method.name.startsWith("get") && method.returnType.superclass == IEmbeddedEntityField::class.java
@@ -95,7 +115,7 @@ abstract class IEntityClass(id: String) : IBaseStructure<INodeClass>(id) {
                 name = name,
                 alias = alias,
                 connectable = connectable,
-                tags = tags,
+                tags = tags.toMutableList().apply { add(DataHolder.instance.domainNodeInfo.nodeId) },
                 description = getDescriptionProperty()?.value
         )?.apply {
             embeddedFields.forEach { field ->
@@ -120,20 +140,22 @@ abstract class IEntityClass(id: String) : IBaseStructure<INodeClass>(id) {
 }
 
 abstract class IEntityField<T>(id: String) : IBaseStructure<IField>(id) {
+    override fun dataType(): String = "EntityField"
+    override fun parentId(): String? = null
+    override fun nodeClassId(): String? = source?.nodeClassId
     abstract fun createFieldValue(entityId: String): EntityFieldValue<T>
 
     companion object {
-        fun addNew(key: String, nodeClassId: String, name: String, alias: String, tags: List<String>, through: Boolean, description: Any?): IField? {
-            return DataHolder.instance.manager?.fieldAdd(
-                    key = key,
-                    nodeClassId = nodeClassId,
-                    name = name,
-                    alias = alias,
-                    through = through,
-                    tags = tags,
-                    description = description
-            )
-        }
+        fun addNew(key: String, nodeClassId: String, name: String, alias: String, tags: List<String>, through: Boolean, description: Any?): IField? =
+                DataHolder.instance.manager?.fieldAdd(
+                        key = key,
+                        nodeClassId = nodeClassId,
+                        name = name,
+                        alias = alias,
+                        through = through,
+                        tags = tags,
+                        description = description
+                )
     }
 
     fun getFieldValue(entity: IEntity<*>): EntityFieldValue<T> {
@@ -162,6 +184,7 @@ abstract class IEntityField<T>(id: String) : IBaseStructure<IField>(id) {
 }
 
 abstract class IEmbeddedEntityField<T>(private val nodeClassId: String, private val key: String) : IEntityField<T>(compose(nodeClassId, key)) {
+    override fun dataName(): String = "EmbeddedField"
     open fun defaultValue(): T? = null
     open fun autoAddNew(): Boolean = false
     open fun autoInitValue(): Boolean = false
@@ -172,12 +195,16 @@ abstract class IEmbeddedEntityField<T>(private val nodeClassId: String, private 
 
     fun setDefaultValueToEntity(entityId: String) =
             defaultValue()?.apply {
-                createFieldValue(entityId).update(this)
+                createFieldValue(entityId).update(this as Any)
             }
 }
 
 abstract class IEntity<T : IEntityClass> : IBaseStructure<INode> {
     val entityClass: T
+    override fun dataType(): String = "Entity"
+    override fun parentId(): String? = source?.path?.lastOrNull()
+    override fun nodeClassId(): String? = source?.nodeClassId
+
 
     constructor(node: INode) : super(node.id) {
         entityClass = cast(DataHolder.instance.entityClassHolder[node.nodeClassId])!!
@@ -325,3 +352,12 @@ interface IDependOnOthers {
     fun id(): String
     fun dependence(): List<String>
 }
+
+data class StructureDataUpdateCapsule(
+        var id: String,
+        var dataName: String,
+        var dataType: String,
+        var updateType: String,
+        var content: String,
+        var updateTime: Long
+)

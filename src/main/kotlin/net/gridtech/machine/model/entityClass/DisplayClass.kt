@@ -18,7 +18,7 @@ class DisplayClass(id: String) : IEntityClass(id) {
 
 
     fun addNew(name: String, alias: String) =
-            addNew(name, alias, tags, false)
+            addNew(name, alias, tags, true)
 
     companion object {
         val tags = listOf("display class")

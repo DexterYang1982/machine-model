@@ -9,85 +9,105 @@ import net.gridtech.core.util.cast
 import net.gridtech.machine.model.entity.*
 import net.gridtech.machine.model.entityClass.*
 import net.gridtech.machine.model.entityField.CustomField
-import net.gridtech.machine.model.entityField.TriggerField
 
 class DataHolder(val bootstrap: Bootstrap, val manager: IManager? = null) {
+    lateinit var domainNodeInfo: IHostInfo
     val entityClassHolder = HashMap<String, IEntityClass>()
     val entityFieldHolder = HashMap<String, IEntityField<*>>()
     val entityHolder = HashMap<String, IEntity<*>>()
     val entityFieldValueHolder = HashMap<String, EntityFieldValue<*>>()
-
-    private val entityAddedPublisher = PublishSubject.create<IEntity<*>>()
-    private val triggerAddedPublisher = PublishSubject.create<TriggerField>()
-
-
+    val structureDataChangedPublisher = PublishSubject.create<Pair<StructureDataChangedType, IBaseStructure<*>>>()
     private val dependencyMap = HashMap<String, List<String>>()
 
     companion object {
         lateinit var instance: DataHolder
     }
 
-    init {
-        instance = this
+    private fun watchNodeClass() {
         bootstrap.dataPublisher<INodeClass>(bootstrap.nodeClassService.serviceName)
                 .subscribe {
                     when (it.first) {
                         ChangedType.UPDATE -> {
                             val nodeClass = it.third!!
                             if (entityClassHolder.containsKey(it.second)) {
-                                entityClassHolder[it.second]!!.source = nodeClass
+                                val entityClass = entityClassHolder[it.second]!!
+                                entityClass.source = nodeClass
+                                structureDataChangedPublisher.onNext(StructureDataChangedType.UPDATE to entityClass)
                             } else {
                                 createEntityClass(nodeClass)?.apply {
                                     entityClassHolder[nodeClass.id] = this
+                                    structureDataChangedPublisher.onNext(StructureDataChangedType.ADD to this)
                                 }
                             }
                         }
                         ChangedType.DELETE -> {
-                            entityClassHolder.remove(it.second)?.delete()
+                            entityClassHolder.remove(it.second)?.apply {
+                                delete()
+                                structureDataChangedPublisher.onNext(StructureDataChangedType.DELETE to this)
+                            }
                         }
+                        ChangedType.FINISHED -> watchField()
                     }
                 }
+    }
+
+    private fun watchField() {
         bootstrap.dataPublisher<IField>(bootstrap.fieldService.serviceName)
                 .subscribe {
                     when (it.first) {
                         ChangedType.UPDATE -> {
                             val field = it.third!!
                             if (entityFieldHolder.containsKey(it.second)) {
-                                entityFieldHolder[field.id]!!.source = field
+                                val entityField = entityFieldHolder[field.id]!!
+                                entityField.source = field
+                                structureDataChangedPublisher.onNext(StructureDataChangedType.UPDATE to entityField)
                             } else {
                                 CustomField.create(field)?.apply {
                                     entityFieldHolder[field.id] = this
-                                }
-                                TriggerField.create(field)?.apply {
-                                    entityFieldHolder[field.id] = this
-                                    triggerAddedPublisher.onNext(this)
+                                    structureDataChangedPublisher.onNext(StructureDataChangedType.ADD to this)
                                 }
                             }
                         }
                         ChangedType.DELETE -> {
-                            entityFieldHolder.remove(it.second)?.delete()
+                            entityFieldHolder.remove(it.second)?.apply {
+                                delete()
+                                structureDataChangedPublisher.onNext(StructureDataChangedType.DELETE to this)
+                            }
                         }
+                        ChangedType.FINISHED -> watchNode()
                     }
                 }
+    }
+
+    private fun watchNode() {
         bootstrap.dataPublisher<INode>(bootstrap.nodeService.serviceName)
                 .subscribe {
                     when (it.first) {
                         ChangedType.UPDATE -> {
                             val node = it.third!!
                             if (entityHolder.containsKey(it.second)) {
-                                entityHolder[it.second]!!.source = node
+                                val entity = entityHolder[it.second]!!
+                                entity.source = node
+                                structureDataChangedPublisher.onNext(StructureDataChangedType.UPDATE to entity)
                             } else {
                                 createEntity(node)?.apply {
                                     entityHolder[node.id] = this
-                                    entityAddedPublisher.onNext(this)
+                                    structureDataChangedPublisher.onNext(StructureDataChangedType.ADD to this)
                                 }
                             }
                         }
                         ChangedType.DELETE -> {
-                            entityHolder.remove(it.second)?.delete()
+                            entityHolder.remove(it.second)?.apply {
+                                delete()
+                                structureDataChangedPublisher.onNext(StructureDataChangedType.DELETE to this)
+                            }
                         }
+                        ChangedType.FINISHED -> watchFieldValue()
                     }
                 }
+    }
+
+    private fun watchFieldValue() {
         bootstrap.dataPublisher<IFieldValue>(bootstrap.fieldValueService.serviceName)
                 .subscribe {
                     when (it.first) {
@@ -97,8 +117,15 @@ class DataHolder(val bootstrap: Bootstrap, val manager: IManager? = null) {
                         ChangedType.DELETE -> {
                             entityFieldValueHolder.remove(it.second)?.delete()
                         }
+                        ChangedType.FINISHED -> {
+                        }
                     }
                 }
+    }
+
+    init {
+        instance = this
+        watchNodeClass()
     }
 
     fun addDependency(dependOnOthers: IDependOnOthers) {
@@ -118,7 +145,9 @@ class DataHolder(val bootstrap: Bootstrap, val manager: IManager? = null) {
                         else
                             null
                     }),
-                    entityAddedPublisher.filter { it.source?.tags?.containsAll(tags) == true }.map { cast<T>(it)!! }
+                    structureDataChangedPublisher.filter {
+                        it.first == StructureDataChangedType.ADD && it.second is IEntity<*> && it.second.source?.tags?.containsAll(tags) == true
+                    }.map { cast<T>(it)!! }
             )
 
     fun <T : IEntity<*>> getEntityByIdObservable(id: String): Single<T> =
@@ -126,9 +155,9 @@ class DataHolder(val bootstrap: Bootstrap, val manager: IManager? = null) {
                     ?.let { entity ->
                         Single.just(cast<T>(entity)!!)
                     }
-                    ?: entityAddedPublisher
-                            .filter { it.source?.id == id }
-                            .map { cast<T>(it)!! }.singleOrError()
+                    ?: structureDataChangedPublisher.filter {
+                        it.first == StructureDataChangedType.ADD && it.second is IEntity<*> && it.second.id == id
+                    }.map { cast<T>(it)!! }.singleOrError()
 
     private fun createEntityClass(nodeClass: INodeClass): IEntityClass? = null
             ?: RootClass.create(nodeClass)
@@ -155,4 +184,10 @@ class DataHolder(val bootstrap: Bootstrap, val manager: IManager? = null) {
             ?: Device.create(node)
             ?: Tunnel.create(node)
 
+}
+
+enum class StructureDataChangedType {
+    ADD,
+    UPDATE,
+    DELETE
 }
