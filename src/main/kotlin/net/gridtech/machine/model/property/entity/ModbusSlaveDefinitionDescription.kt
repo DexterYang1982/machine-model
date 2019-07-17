@@ -7,7 +7,11 @@ import net.gridtech.machine.model.entity.ModbusSlave
 
 
 class ModbusSlaveDefinitionDescription(private val modbusSlave: ModbusSlave)
-    : IBaseProperty<SlaveAddress, INode>({ parse(it.description) }, SlaveAddress.empty())
+    : IBaseProperty<SlaveAddress, INode>({ parse(it.description) }, SlaveAddress.empty()) {
+    fun updateSlaveAddress(slaveAddress: SlaveAddress) {
+        modbusSlave.updateDescription(slaveAddress)
+    }
+}
 
 data class SlaveAddress(
         var ip: String,
