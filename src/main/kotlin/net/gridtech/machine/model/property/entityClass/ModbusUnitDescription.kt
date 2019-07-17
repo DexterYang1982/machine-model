@@ -22,58 +22,50 @@ class ModbusUnitDescriptionProperty(private val modbusUnitClass: ModbusUnitClass
         value?.write?.forEach { DataHolder.instance.addDependency(it) }
     }
 
-    fun addReadPoint(readPoint: ReadPoint) {
-        readPoint.id = generateId()
-        value?.apply {
-            val newReadPoints = read.toMutableList()
-            newReadPoints.add(readPoint)
-            modbusUnitClass.updateDescription(this.copy(read = newReadPoints))
-        }
-    }
-
-    fun updateReadPoint(readPoint: ReadPoint) {
-        value?.apply {
-            if (read.find { it.id == readPoint.id } != null) {
-                modbusUnitClass.updateDescription(this.copy(read = read.map { if (it.id == readPoint.id) readPoint else it }))
+    fun addReadPoint(readPoint: ReadPoint) =
+            value?.let {
+                readPoint.id = generateId()
+                val newReadPoints = it.read.toMutableList()
+                newReadPoints.add(readPoint)
+                modbusUnitClass.updateDescription(it.copy(read = newReadPoints))
             }
-        }
-    }
 
-    fun deleteReadPoint(id: String) {
-        APIExceptionEnum.ERR10_CAN_NOT_BE_DELETED.assert(DataHolder.instance.checkDependency(id))
-        value?.apply {
-            if (read.find { it.id == id } != null) {
-                modbusUnitClass.updateDescription(this.copy(read = read.filter { it.id != id }))
+    fun updateReadPoint(readPoint: ReadPoint) =
+            value?.takeIf { it.read.find { r -> r.id == readPoint.id } != null }
+                    ?.let {
+                        modbusUnitClass.updateDescription(it.copy(read = it.read.map { r -> if (r.id == readPoint.id) readPoint else r }))
+                    }
+
+    fun deleteReadPoint(id: String) =
+            APIExceptionEnum.ERR10_CAN_NOT_BE_DELETED.assert(DataHolder.instance.checkDependency(id)).let {
+                value?.takeIf { it.read.find { r -> r.id == id } != null }
+                        ?.let {
+                            modbusUnitClass.updateDescription(it.copy(read = it.read.filter { r -> r.id != id }))
+                        }
             }
-        }
-    }
 
-    fun addWritePoint(writePoint: WritePoint) {
-        writePoint.id = generateId()
-
-        value?.apply {
-            val newWritePoints = write.toMutableList()
-            newWritePoints.add(writePoint)
-            modbusUnitClass.updateDescription(this.copy(write = newWritePoints))
-        }
-    }
-
-    fun updateWritePoint(writePoint: WritePoint) {
-        value?.apply {
-            if (write.find { it.id == writePoint.id } != null) {
-                modbusUnitClass.updateDescription(this.copy(write = write.map { if (it.id == writePoint.id) writePoint else it }))
+    fun addWritePoint(writePoint: WritePoint) =
+            value?.let {
+                writePoint.id = generateId()
+                val newWritePoints = it.write.toMutableList()
+                newWritePoints.add(writePoint)
+                modbusUnitClass.updateDescription(it.copy(write = newWritePoints))
             }
-        }
-    }
 
-    fun deleteWritePoint(id: String) {
-        APIExceptionEnum.ERR10_CAN_NOT_BE_DELETED.assert(DataHolder.instance.checkDependency(id))
-        value?.apply {
-            if (write.find { it.id == id } != null) {
-                modbusUnitClass.updateDescription(this.copy(write = write.filter { it.id != id }))
+    fun updateWritePoint(writePoint: WritePoint) =
+            value?.takeIf { it.write.find { w -> w.id == writePoint.id } != null }
+                    ?.let {
+                        modbusUnitClass.updateDescription(it.copy(write = it.write.map { w -> if (w.id == writePoint.id) writePoint else w }))
+                    }
+
+    fun deleteWritePoint(id: String) =
+            APIExceptionEnum.ERR10_CAN_NOT_BE_DELETED.assert(DataHolder.instance.checkDependency(id)).let {
+                value?.takeIf { it.write.find { w -> w.id == id } != null }
+                        ?.let {
+                            modbusUnitClass.updateDescription(it.copy(write = it.write.filter { w -> w.id != id }))
+                        }
             }
-        }
-    }
+
 }
 
 data class ModbusUnitDescription(

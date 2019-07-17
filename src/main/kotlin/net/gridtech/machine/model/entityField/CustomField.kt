@@ -21,7 +21,7 @@ class CustomField(field: IField) : IEntityField<ValueDescription>(field.id) {
                 else
                     null
 
-        fun addNew(entityClassId: String, name: String, alias: String): IField? =
+        fun addNew(entityClassId: String, name: String, alias: String, output: Boolean): IField? =
                 addNew(
                         "custom-${generateId()}",
                         entityClassId,
@@ -29,7 +29,7 @@ class CustomField(field: IField) : IEntityField<ValueDescription>(field.id) {
                         alias,
                         tags,
                         true,
-                        FieldValueDescription.empty()
+                        FieldValueDescription.empty().apply { this.output=output }
                 )
     }
 
