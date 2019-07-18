@@ -1,15 +1,14 @@
 package net.gridtech.machine.model.entity
 
 import net.gridtech.core.data.INode
-import net.gridtech.machine.model.IBaseProperty
+import net.gridtech.core.util.cast
+import net.gridtech.machine.model.DataHolder
 import net.gridtech.machine.model.IEntity
 import net.gridtech.machine.model.entityClass.ModbusSlaveClass
 import net.gridtech.machine.model.property.entity.ModbusSlaveDefinitionDescription
 
 
-class ModbusSlave : IEntity<ModbusSlaveClass> {
-    constructor(node: INode) : super(node)
-    constructor(id: String, t: ModbusSlaveClass) : super(id, t)
+class ModbusSlave(id: String, entityClass: ModbusSlaveClass) : IEntity<ModbusSlaveClass>(id, entityClass) {
     override val description = ModbusSlaveDefinitionDescription(this)
 
     fun addNew(parentId: String, name: String, alias: String) =
@@ -27,7 +26,7 @@ class ModbusSlave : IEntity<ModbusSlaveClass> {
         val tags = listOf("modbus slave")
         fun create(node: INode): ModbusSlave? =
                 if (node.tags.containsAll(tags))
-                    ModbusSlave(node)
+                    ModbusSlave(node.id, cast(DataHolder.instance.entityClassHolder[node.nodeClassId])!!).apply { initialize(node) }
                 else
                     null
     }

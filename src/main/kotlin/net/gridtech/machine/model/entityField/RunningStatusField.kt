@@ -27,7 +27,7 @@ class RunningStatusField(entityClass: IEntityClass) : IEmbeddedEntityField<Boole
                     counter.debounce(INTERVAL_RUNNING_STATUS_REPORT * 2, TimeUnit.MILLISECONDS)
                             .subscribe {
                                 if (value == true) {
-                                    _value = false
+                                    v = false
                                     publish(false)
                                 }
                             }

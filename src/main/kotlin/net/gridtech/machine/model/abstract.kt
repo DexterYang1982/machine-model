@@ -201,22 +201,12 @@ abstract class IEmbeddedEntityField<T>(private val nodeClassId: String, private 
             }
 }
 
-abstract class IEntity<T : IEntityClass> : IBaseStructure<INode> {
-    val entityClass: T
+abstract class IEntity<T : IEntityClass>(id: String, val entityClass: T) : IBaseStructure<INode>(id) {
     override fun dataType(): String = "Entity"
     override fun parentId(): String? = source?.path?.lastOrNull()
     override fun nodeClassId(): String? = source?.nodeClassId
     override fun path(): List<String> = source?.path ?: emptyList()
 
-
-    constructor(node: INode) : super(node.id) {
-        entityClass = cast(DataHolder.instance.entityClassHolder[node.nodeClassId])!!
-        initialize(node)
-    }
-
-    constructor(id: String, t: T) : super(id) {
-        entityClass = t
-    }
 
     protected fun addNew(parentId: String,
                          name: String,
@@ -262,14 +252,14 @@ abstract class IEntity<T : IEntityClass> : IBaseStructure<INode> {
 abstract class IBaseProperty<T, U : IBaseData>(private val castFunction: (raw: U) -> T, initValue: T? = null) : ObservableOnSubscribe<T> {
     private var emitters = mutableListOf<ObservableEmitter<T>>()
     private var lastParseTime: Long = -1
-    protected var _value: T? = initValue
+    protected var v: T? = initValue
 
     val value: T?
         get() {
             if (source?.updateTime ?: -1 > lastParseTime) {
                 parseValue(source!!)
             }
-            return _value
+            return v
         }
     val observable: Observable<T>
         get() = Observable.create(this).doFinally {
@@ -282,7 +272,7 @@ abstract class IBaseProperty<T, U : IBaseData>(private val castFunction: (raw: U
                 sourceUpdated(value)
                 if (emitters.isNotEmpty()) {
                     if (parseValue(value)) {
-                        publish(_value!!)
+                        publish(v!!)
                     }
                 }
             }
@@ -303,8 +293,8 @@ abstract class IBaseProperty<T, U : IBaseData>(private val castFunction: (raw: U
     private fun parseValue(u: U): Boolean {
         lastParseTime = u.updateTime
         val casted = castFunction(u)
-        return if (_value != casted) {
-            _value = casted
+        return if (v != casted) {
+            v = casted
             true
         } else
             false

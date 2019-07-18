@@ -10,14 +10,8 @@ import net.gridtech.machine.model.entity.Device
 
 class DeviceDefinitionDescription(private val device: Device)
     : IBaseProperty<DeviceDefinition, INode>({
-    System.err.println("---$it")
     parse(it.description)
 }, DeviceDefinition.empty()) {
-
-
-    override fun sourceUpdated(s: INode) {
-        println("---$s")
-    }
 
     fun addStatus(modbusRead: ModbusRead) =
             value?.let {
