@@ -42,6 +42,7 @@ data class EntityWrite(
 
         )
     }
+
     override fun id(): String = id
     override fun dependence(): List<String> = listOf(entityId, targetId, valueDescriptionId)
 }
@@ -50,3 +51,11 @@ enum class WriteTargetType {
     DEVICE_COMMAND,
     CUSTOM_FIELD
 }
+
+data class Trigger(
+        var id: String,
+        var name: String,
+        var condition: ReadCondition,
+        var delay: Long,
+        var writes: List<EntityWrite>
+)

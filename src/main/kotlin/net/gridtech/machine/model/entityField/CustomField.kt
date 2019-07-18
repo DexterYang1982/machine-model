@@ -10,8 +10,7 @@ import net.gridtech.machine.model.property.field.FieldValueDescription
 import net.gridtech.machine.model.property.field.ValueDescription
 
 class CustomField(field: IField) : IEntityField<ValueDescription>(field.id) {
-    val description = CustomFieldDescription(this)
-    override fun getDescriptionProperty(): IBaseProperty<*, IField>? = description
+    override val description = CustomFieldDescription(this)
 
     companion object {
         private val tags = listOf("custom field")

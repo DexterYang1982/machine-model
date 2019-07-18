@@ -7,8 +7,7 @@ import net.gridtech.machine.model.property.entityClass.ModbusUnitDescriptionProp
 
 
 class ModbusUnitClass(id: String) : IEntityClass(id) {
-    val description = ModbusUnitDescriptionProperty(this)
-    override fun getDescriptionProperty(): IBaseProperty<*, INodeClass>? = description
+    override val description = ModbusUnitDescriptionProperty(this)
 
     fun addNew(name: String, alias: String) =
             addNew(name, alias, tags, false)

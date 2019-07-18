@@ -17,7 +17,7 @@ abstract class IBaseStructure<T : IStructureData>(val id: String) {
         source = initData
     }
 
-    open fun getDescriptionProperty(): IBaseProperty<*, T>? = null
+    open val description: IBaseProperty<*, T>? = null
 
     val name = object : IBaseProperty<String, IStructureData>({ structure ->
         structure.name
@@ -32,7 +32,7 @@ abstract class IBaseStructure<T : IStructureData>(val id: String) {
                 field = v
                 name.source = v
                 alias.source = v
-                getDescriptionProperty()?.source = v
+                description?.source = v
             }
         }
 
@@ -41,6 +41,7 @@ abstract class IBaseStructure<T : IStructureData>(val id: String) {
     open fun dataName(): String = javaClass.simpleName
     abstract fun parentId(): String?
     abstract fun nodeClassId(): String?
+    open fun path(): List<String> = emptyList()
 
     fun capsule() = StructureDataUpdateCapsule(
             id = id,
@@ -51,27 +52,28 @@ abstract class IBaseStructure<T : IStructureData>(val id: String) {
                     "id" to id,
                     "name" to name.value,
                     "alias" to alias.value,
-                    "description" to getDescriptionProperty()?.value,
+                    "description" to description?.value,
                     "nodeClassId" to nodeClassId(),
-                    "parentId" to parentId()
+                    "parentId" to parentId(),
+                    "path" to path()
             )),
             updateTime = source?.updateTime ?: -1
     )
 
     fun updateNameAndAlias(name: String, alias: String) =
-            source?.apply {
-                update(name, alias, getDescriptionProperty()?.value)
+            source?.let {
+                update(name, alias, description?.value)
             }
 
     fun updateDescription(description: Any?) =
-            source?.apply {
-                update(this.name, this.alias, description)
+            source?.let {
+                update(it.name, it.alias, description)
             }
 
     fun delete() {
         name.delete()
         alias.delete()
-        getDescriptionProperty()?.delete()
+        description?.delete()
     }
 
     fun onDelete(): Single<*> = DataHolder.instance.structureDataChangedPublisher
@@ -116,7 +118,7 @@ abstract class IEntityClass(id: String) : IBaseStructure<INodeClass>(id) {
                 alias = alias,
                 connectable = connectable,
                 tags = tags.toMutableList().apply { add(DataHolder.instance.domainNodeInfo.nodeId) },
-                description = getDescriptionProperty()?.value
+                description = description?.value
         )?.apply {
             embeddedFields.forEach { field ->
                 if (field.autoAddNew())
@@ -204,11 +206,12 @@ abstract class IEntity<T : IEntityClass> : IBaseStructure<INode> {
     override fun dataType(): String = "Entity"
     override fun parentId(): String? = source?.path?.lastOrNull()
     override fun nodeClassId(): String? = source?.nodeClassId
+    override fun path(): List<String> = source?.path ?: emptyList()
 
 
     constructor(node: INode) : super(node.id) {
         entityClass = cast(DataHolder.instance.entityClassHolder[node.nodeClassId])!!
-        super.initialize(node)
+        initialize(node)
     }
 
     constructor(id: String, t: T) : super(id) {
@@ -230,7 +233,7 @@ abstract class IEntity<T : IEntityClass> : IBaseStructure<INode> {
                 externalNodeIdScope = externalNodeIdScope,
                 externalNodeClassTagScope = externalNodeClassTagScope,
                 tags = tags,
-                description = getDescriptionProperty()?.value
+                description = description?.value
         )?.apply {
             entityClass.embeddedFields.forEach { field ->
                 if (field.autoInitValue())

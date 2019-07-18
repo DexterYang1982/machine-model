@@ -1,13 +1,16 @@
 package net.gridtech.machine.model.entity
 
 import net.gridtech.core.data.INode
+import net.gridtech.machine.model.IBaseProperty
 import net.gridtech.machine.model.IEntity
 import net.gridtech.machine.model.entityClass.GroupClass
+import net.gridtech.machine.model.property.entity.GroupDefinitionDescription
 
 
 class Group : IEntity<GroupClass> {
     constructor(node: INode) : super(node)
     constructor(id: String, t: GroupClass) : super(id, t)
+    override val description = GroupDefinitionDescription(this)
 
     fun addNew(parentId: String, name: String, alias: String) =
             addNew(

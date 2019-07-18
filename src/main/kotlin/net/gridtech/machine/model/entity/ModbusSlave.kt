@@ -10,6 +10,7 @@ import net.gridtech.machine.model.property.entity.ModbusSlaveDefinitionDescripti
 class ModbusSlave : IEntity<ModbusSlaveClass> {
     constructor(node: INode) : super(node)
     constructor(id: String, t: ModbusSlaveClass) : super(id, t)
+    override val description = ModbusSlaveDefinitionDescription(this)
 
     fun addNew(parentId: String, name: String, alias: String) =
             addNew(
@@ -21,8 +22,6 @@ class ModbusSlave : IEntity<ModbusSlaveClass> {
                     emptyList()
             )
 
-    val description = ModbusSlaveDefinitionDescription(this)
-    override fun getDescriptionProperty(): IBaseProperty<*, INode>? = description
 
     companion object {
         val tags = listOf("modbus slave")

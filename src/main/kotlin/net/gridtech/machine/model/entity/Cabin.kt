@@ -10,8 +10,7 @@ import net.gridtech.machine.model.property.entity.CabinDefinitionDescription
 class Cabin : IEntity<CabinClass> {
     constructor(node: INode) : super(node)
     constructor(id: String, t: CabinClass) : super(id, t)
-
-
+    override val description = CabinDefinitionDescription(this)
 
     fun addNew(parentId: String, name: String, alias: String) =
             addNew(
@@ -23,8 +22,6 @@ class Cabin : IEntity<CabinClass> {
                     emptyList()
             )
 
-    val description = CabinDefinitionDescription(this)
-    override fun getDescriptionProperty(): IBaseProperty<*, INode>? = description
 
     companion object {
         val tags = listOf("cabin")

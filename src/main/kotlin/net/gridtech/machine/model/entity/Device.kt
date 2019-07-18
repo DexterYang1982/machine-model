@@ -1,7 +1,6 @@
 package net.gridtech.machine.model.entity
 
 import net.gridtech.core.data.INode
-import net.gridtech.machine.model.IBaseProperty
 import net.gridtech.machine.model.IEntity
 import net.gridtech.machine.model.entityClass.DeviceClass
 import net.gridtech.machine.model.property.entity.DeviceDefinitionDescription
@@ -10,6 +9,7 @@ import net.gridtech.machine.model.property.entity.DeviceDefinitionDescription
 class Device : IEntity<DeviceClass> {
     constructor(node: INode) : super(node)
     constructor(id: String, t: DeviceClass) : super(id, t)
+    override val description = DeviceDefinitionDescription(this)
 
     fun addNew(parentId: String, name: String, alias: String) =
             addNew(
@@ -20,10 +20,6 @@ class Device : IEntity<DeviceClass> {
                     emptyList(),
                     emptyList()
             )
-
-    val description = DeviceDefinitionDescription(this)
-    override fun getDescriptionProperty(): IBaseProperty<*, INode>? = description
-
 
     companion object {
         val tags = listOf("device")

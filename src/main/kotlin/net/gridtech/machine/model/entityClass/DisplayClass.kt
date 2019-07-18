@@ -13,8 +13,7 @@ class DisplayClass(id: String) : IEntityClass(id) {
     val runningStatus = RunningStatusField(this)
     val secret = SecretField(this)
 
-    val description = DisplayClientVersionDescription(this)
-    override fun getDescriptionProperty(): IBaseProperty<*, INodeClass>? = description
+    override val description = DisplayClientVersionDescription(this)
 
 
     fun addNew(name: String, alias: String) =
