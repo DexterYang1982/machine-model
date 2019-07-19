@@ -3,6 +3,7 @@ package net.gridtech.machine.model
 data class EntityRead(
         var id: String,
         var entityId: String,
+        var dataName: String,
         var targetType: ReadTargetType,
         var targetId: String,
         var valueDescriptionId: String
@@ -13,7 +14,7 @@ data class EntityRead(
 
 enum class ReadTargetType {
     DEVICE_STATUS,
-    CUSTOM_FIELD
+    CUSTOM_OUTPUT
 }
 
 data class ReadCondition(
@@ -28,12 +29,14 @@ data class ReadCondition(
 data class EntityWrite(
         var id: String,
         var entityId: String,
+        var dataName: String,
         var targetType: WriteTargetType,
         var targetId: String,
         var valueDescriptionId: String
 ) : IDependOnOthers {
     companion object {
         fun empty() = EntityWrite(
+                "",
                 "",
                 "",
                 WriteTargetType.DEVICE_COMMAND,
@@ -49,7 +52,7 @@ data class EntityWrite(
 
 enum class WriteTargetType {
     DEVICE_COMMAND,
-    CUSTOM_FIELD
+    CUSTOM_INPUT
 }
 
 data class Trigger(

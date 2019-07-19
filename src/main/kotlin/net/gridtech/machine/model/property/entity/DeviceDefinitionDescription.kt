@@ -78,6 +78,11 @@ class DeviceDefinitionDescription(private val device: Device)
                             device.updateDescription(it.copy(processes = it.processes.filter { p -> p.id != id }))
                         }
             }
+
+    fun updateErrorCondition(errorCondition: ReadCondition) =
+            value?.let {
+                device.updateDescription(it.copy(errorCondition = errorCondition))
+            }
 }
 
 
