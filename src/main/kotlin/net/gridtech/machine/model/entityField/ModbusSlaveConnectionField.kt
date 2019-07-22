@@ -8,6 +8,7 @@ class ModbusSlaveConnectionField(entityClass: IEntityClass) : IEmbeddedEntityFie
     override fun defaultValue(): Boolean = false
     override fun autoAddNew(): Boolean = true
     override fun autoInitValue(): Boolean = true
+    override fun getFieldKey(): String = key
     override fun addNew() {
         addNew(
                 "slave connection",

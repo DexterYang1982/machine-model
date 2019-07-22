@@ -145,6 +145,7 @@ abstract class IEntityField<T>(id: String) : IBaseStructure<IField>(id) {
     override fun dataType(): String = "EntityField"
     override fun parentId(): String? = null
     override fun nodeClassId(): String? = source?.nodeClassId
+    open fun getFieldKey(): String = ""
     abstract fun createFieldValue(entityId: String): EntityFieldValue<T>
 
     companion object {

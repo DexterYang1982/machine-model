@@ -11,6 +11,7 @@ class DeviceCurrentProcessField(entityClass: IEntityClass) : IEmbeddedEntityFiel
     override fun autoAddNew(): Boolean = true
     override fun autoInitValue(): Boolean = true
 
+    override fun getFieldKey(): String = key
     override fun addNew() {
         addNew(
                 "device current process",

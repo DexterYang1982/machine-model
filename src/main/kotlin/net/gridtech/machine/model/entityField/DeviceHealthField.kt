@@ -9,6 +9,7 @@ class DeviceHealthField(entityClass: IEntityClass) : IEmbeddedEntityField<Boolea
     override fun defaultValue(): Boolean = true
     override fun autoAddNew(): Boolean = true
     override fun autoInitValue(): Boolean = true
+    override fun getFieldKey(): String = key
     override fun addNew() {
         addNew(
                 "device healthy",

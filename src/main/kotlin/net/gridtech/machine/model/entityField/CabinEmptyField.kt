@@ -10,7 +10,7 @@ class CabinEmptyField(entityClass: IEntityClass) : IEmbeddedEntityField<Boolean>
     override fun defaultValue(): Boolean = false
     override fun autoAddNew(): Boolean = true
     override fun autoInitValue(): Boolean = true
-
+    override fun getFieldKey(): String = key
     override fun addNew() {
         addNew(
                 "cabin is empty",

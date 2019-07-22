@@ -3,7 +3,6 @@ package net.gridtech.machine.model.entityField
 import net.gridtech.core.data.IField
 import net.gridtech.core.util.generateId
 import net.gridtech.machine.model.EntityFieldValue
-import net.gridtech.machine.model.IBaseProperty
 import net.gridtech.machine.model.IEntityField
 import net.gridtech.machine.model.property.field.CustomFieldDescription
 import net.gridtech.machine.model.property.field.FieldValueDescription
@@ -11,6 +10,7 @@ import net.gridtech.machine.model.property.field.ValueDescription
 
 class CustomField(field: IField) : IEntityField<ValueDescription>(field.id) {
     override val description = CustomFieldDescription(this)
+    override fun getFieldKey(): String = "custom"
 
     companion object {
         private val tags = listOf("custom field")
@@ -28,7 +28,7 @@ class CustomField(field: IField) : IEntityField<ValueDescription>(field.id) {
                         alias,
                         tags,
                         true,
-                        FieldValueDescription.empty().apply { this.output=output }
+                        FieldValueDescription.empty().apply { this.output = output }
                 )
     }
 

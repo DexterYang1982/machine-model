@@ -10,6 +10,7 @@ class DeviceProcessQueueField(entityClass: IEntityClass) : IEmbeddedEntityField<
     override fun defaultValue(): List<TransactionProcess> = emptyList()
     override fun autoAddNew(): Boolean = true
     override fun autoInitValue(): Boolean = true
+    override fun getFieldKey(): String = key
 
     override fun addNew() {
         addNew(

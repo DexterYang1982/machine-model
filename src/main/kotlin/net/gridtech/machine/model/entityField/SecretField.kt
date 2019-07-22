@@ -11,6 +11,8 @@ class SecretField(entityClass: IEntityClass) : IEmbeddedEntityField<String>(enti
     override fun autoAddNew(): Boolean = false
     override fun autoInitValue(): Boolean = true
 
+    override fun getFieldKey(): String = key
+
     companion object {
         const val key = KEY_FIELD_SECRET
     }

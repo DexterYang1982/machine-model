@@ -11,6 +11,7 @@ class CabinStorageField(entityClass: IEntityClass) : IEmbeddedEntityField<List<S
     override fun autoAddNew(): Boolean = true
     override fun autoInitValue(): Boolean = true
 
+    override fun getFieldKey(): String = key
     override fun addNew() {
         addNew(
                 "cabin storage",

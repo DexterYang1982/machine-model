@@ -12,6 +12,7 @@ import java.util.concurrent.TimeUnit
 
 class RunningStatusField(entityClass: IEntityClass) : IEmbeddedEntityField<Boolean>(entityClass.id, key) {
     override fun defaultValue(): Boolean = false
+    override fun getFieldKey(): String = key
 
     companion object {
         const val key = KEY_FIELD_RUNNING_STATUS

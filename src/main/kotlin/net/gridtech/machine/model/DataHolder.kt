@@ -150,6 +150,22 @@ class DataHolder(val bootstrap: Bootstrap, val manager: IManager? = null) {
                     }.map { cast<T>(it)!! }
             )
 
+    fun getEntityByConditionObservable(condition: (entity: IEntity<*>) -> Boolean): Observable<IEntity<*>> =
+            Observable.concat(
+                    Observable.fromIterable(entityHolder.values.filter { entity -> condition(entity) }),
+                    structureDataChangedPublisher.filter { (type, structure) ->
+                        type == StructureDataChangedType.ADD && structure is IEntity<*> && condition(structure)
+                    }.map { it.second as IEntity<*> }
+            )
+
+    fun getEntityFieldByConditionObservable(condition: (entity: IEntityField<*>) -> Boolean): Observable<IEntityField<*>> =
+            Observable.concat(
+                    Observable.fromIterable(entityFieldHolder.values.filter { entityField -> condition(entityField) }),
+                    structureDataChangedPublisher.filter { (type, structure) ->
+                        type == StructureDataChangedType.ADD && structure is IEntityField<*> && condition(structure)
+                    }.map { it.second as IEntityField<*> }
+            )
+
     fun <T : IEntity<*>> getEntityByIdObservable(id: String): Single<T> =
             entityHolder[id]
                     ?.let { entity ->
