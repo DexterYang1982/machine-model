@@ -6,6 +6,7 @@ data class EntityRead(
         var dataName: String,
         var targetType: ReadTargetType,
         var targetId: String,
+        var equals:Boolean,
         var valueDescriptionId: String
 ) : IDependOnOthers {
     override fun id(): String = id
