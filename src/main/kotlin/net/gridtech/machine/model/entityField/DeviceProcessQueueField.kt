@@ -1,6 +1,6 @@
 package net.gridtech.machine.model.entityField
 
-import net.gridtech.core.util.cast
+import net.gridtech.core.util.parse
 import net.gridtech.machine.model.EntityFieldValue
 import net.gridtech.machine.model.IEmbeddedEntityField
 import net.gridtech.machine.model.IEntityClass
@@ -26,5 +26,5 @@ class DeviceProcessQueueField(entityClass: IEntityClass) : IEmbeddedEntityField<
     }
 
     override fun createFieldValue(entityId: String): EntityFieldValue<List<TransactionProcess>> =
-            object : EntityFieldValue<List<TransactionProcess>>(entityId, id, { cast(it.value)!! }) {}
+            object : EntityFieldValue<List<TransactionProcess>>(entityId, id, { parse(it.value)!! }) {}
 }

@@ -1,6 +1,6 @@
 package net.gridtech.machine.model.entityField
 
-import net.gridtech.core.util.cast
+import net.gridtech.core.util.parse
 import net.gridtech.machine.model.EntityFieldValue
 import net.gridtech.machine.model.IEmbeddedEntityField
 import net.gridtech.machine.model.IEntityClass
@@ -26,7 +26,7 @@ class TunnelCurrentTransactionField(entityClass: IEntityClass) : IEmbeddedEntity
     }
 
     override fun createFieldValue(entityId: String): EntityFieldValue<CurrentTransaction> =
-            object : EntityFieldValue<CurrentTransaction>(entityId, id, { cast(it.value)!! }) {}
+            object : EntityFieldValue<CurrentTransaction>(entityId, id, { parse(it.value)!! }) {}
 }
 
 data class CurrentTransaction(

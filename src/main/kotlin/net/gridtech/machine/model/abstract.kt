@@ -110,6 +110,10 @@ abstract class IEntityClass(id: String) : IBaseStructure<INodeClass>(id) {
         super.initialize(initData)
     }
 
+    fun getCustomFields(): List<CustomField> =
+            DataHolder.instance.entityFieldHolder.values.filter {
+                it.source?.nodeClassId == id && it is CustomField
+            }.map { cast<CustomField>(it)!! }
 
     protected fun addNew(name: String, alias: String, tags: List<String>, connectable: Boolean): INodeClass? {
         return DataHolder.instance.manager?.nodeClassAdd(
@@ -164,9 +168,9 @@ abstract class IEntityField<T>(id: String) : IBaseStructure<IField>(id) {
     fun getFieldValue(entity: IEntity<*>): EntityFieldValue<T> {
         val fieldValueId = compose(entity.id, id)
         return cast(DataHolder.instance.entityFieldValueHolder.getOrPut(fieldValueId) {
-            val entityFieldValue = createFieldValue(entity.id)
-            entityFieldValue.source = DataHolder.instance.bootstrap.fieldValueService.getById(fieldValueId)
-            entityFieldValue
+            createFieldValue(entity.id).apply {
+                source = DataHolder.instance.bootstrap.fieldValueService.getById(fieldValueId)
+            }
         })!!
     }
 
@@ -235,6 +239,7 @@ abstract class IEntity<T : IEntityClass>(id: String, val entityClass: T) : IBase
 
     fun getCustomFieldValue(fieldId: String): EntityFieldValue<ValueDescription>? =
             cast<CustomField>(DataHolder.instance.entityFieldHolder[fieldId])?.getFieldValue(this)
+
 
     override fun update(name: String, alias: String, description: Any?) {
         DataHolder.instance.manager?.nodeUpdate(
