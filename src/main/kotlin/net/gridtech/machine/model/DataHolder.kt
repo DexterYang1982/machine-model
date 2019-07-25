@@ -137,19 +137,6 @@ class DataHolder(val bootstrap: Bootstrap, val manager: IManager? = null) {
     fun checkDependency(id: String) =
             dependencyMap.values.find { it.contains(id) } == null
 
-    fun <T : IEntity<*>> getEntityByTagsObservable(tags: List<String>): Observable<T> =
-            Observable.concat(
-                    Observable.fromIterable(entityHolder.values.mapNotNull { entity ->
-                        if (entity.source?.tags?.containsAll(tags) == true)
-                            cast<T>(entity)!!
-                        else
-                            null
-                    }),
-                    structureDataChangedPublisher.filter {
-                        it.first == StructureDataChangedType.ADD && it.second is IEntity<*> && it.second.source?.tags?.containsAll(tags) == true
-                    }.map { cast<T>(it)!! }
-            )
-
     fun getEntityByConditionObservable(condition: (entity: IEntity<*>) -> Boolean): Observable<IEntity<*>> =
             Observable.concat(
                     Observable.fromIterable(entityHolder.values.filter { entity -> condition(entity) }),

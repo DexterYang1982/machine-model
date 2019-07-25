@@ -260,6 +260,8 @@ abstract class IBaseProperty<T, U : IBaseData>(private val castFunction: (raw: U
     private var lastParseTime: Long = -1
     protected var v: T? = initValue
 
+    open fun publishWhenSourceUpdate(): Boolean = false
+
     val value: T?
         get() {
             if (source?.updateTime ?: -1 > lastParseTime) {
@@ -277,7 +279,7 @@ abstract class IBaseProperty<T, U : IBaseData>(private val castFunction: (raw: U
             if (value != null) {
                 sourceUpdated(value)
                 if (emitters.isNotEmpty()) {
-                    if (parseValue(value)) {
+                    if (parseValue(value) || publishWhenSourceUpdate()) {
                         publish(v!!)
                     }
                 }
@@ -334,6 +336,8 @@ open class EntityFieldValue<T>(private val nodeId: String, private val fieldId: 
         get() = source?.session ?: ""
     val updateTime: Long
         get() = source?.updateTime ?: -1
+
+    override fun publishWhenSourceUpdate(): Boolean = true
 
     fun update(v: Any, session: String? = null) =
             DataHolder.instance.bootstrap.fieldValueService.setFieldValue(
