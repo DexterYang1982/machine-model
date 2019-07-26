@@ -40,24 +40,26 @@ data class CurrentTransaction(
 }
 
 data class TransactionProcess(
-        var transactionSession: String,
+        var transactionId: String?,
+        var transactionPhaseId: String?,
+        var transactionSession: String?,
         var transactionPhaseSession: String,
-        var tunnelId: String,
-        var transactionId: String,
-        var transactionPhaseId: String,
+        var tunnelId: String?,
         var deviceId: String,
         var deviceProcessId: String,
+        var initTime: Long,
         var state: ProcessState
 ) {
     companion object {
         fun empty() = TransactionProcess(
+                null,
+                null,
+                null,
+                "",
+                null,
                 "",
                 "",
-                "",
-                "",
-                "",
-                "",
-                "",
+                -1,
                 ProcessState.FINISHED
         )
     }
@@ -66,6 +68,8 @@ data class TransactionProcess(
 enum class ProcessState {
     INIT,
     QUEUED,
+    WAITING,
     RUNNING,
+    ERROR,
     FINISHED
 }

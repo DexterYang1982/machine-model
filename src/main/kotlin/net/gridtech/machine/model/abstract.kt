@@ -331,7 +331,7 @@ abstract class IBaseProperty<T, U : IBaseData>(private val castFunction: (raw: U
     }
 }
 
-open class EntityFieldValue<T>(private val nodeId: String, private val fieldId: String, castFunction: (raw: IFieldValue) -> T) : IBaseProperty<T, IFieldValue>(castFunction) {
+open class EntityFieldValue<T>(val nodeId: String, val fieldId: String, castFunction: (raw: IFieldValue) -> T) : IBaseProperty<T, IFieldValue>(castFunction) {
     val session: String
         get() = source?.session ?: ""
     val updateTime: Long

@@ -2,11 +2,18 @@ package net.gridtech.machine.model.entity
 
 import net.gridtech.core.data.INode
 import net.gridtech.core.util.cast
+import net.gridtech.core.util.currentTime
 import net.gridtech.machine.model.DataHolder
 import net.gridtech.machine.model.IEntity
 import net.gridtech.machine.model.entityClass.DeviceClass
 import net.gridtech.machine.model.entityField.CustomField
+import net.gridtech.machine.model.entityField.ProcessRuntime
+import net.gridtech.machine.model.entityField.ProcessState
+import net.gridtech.machine.model.entityField.TransactionProcess
 import net.gridtech.machine.model.property.entity.DeviceDefinitionDescription
+import net.gridtech.machine.model.property.entity.DeviceProcess
+import net.gridtech.machine.model.property.entity.ModbusRead
+import net.gridtech.machine.model.property.entity.ModbusWrite
 
 
 class Device(id: String, entityClass: DeviceClass) : IEntity<DeviceClass>(id, entityClass) {
@@ -30,8 +37,34 @@ class Device(id: String, entityClass: DeviceClass) : IEntity<DeviceClass>(id, en
                     null
     }
 
+    fun getStatusById(statusId: String): ModbusRead? =
+            description.value?.status?.find { status -> status.id == statusId }
+
+    fun getCommandById(commandId: String): ModbusWrite? =
+            description.value?.commands?.find { command -> command.id == commandId }
+
+    fun getProcessById(processId: String): DeviceProcess? =
+            description.value?.processes?.find { process -> process.id == processId }
+
+    fun executeProcess(processId: String, session: String): Boolean? =
+            getProcessById(processId)?.let { process ->
+                entityClass.currentProcess.getFieldValue(this).update(ProcessRuntime(
+                        transactionId = null,
+                        transactionPhaseId = null,
+                        transactionSession = null,
+                        transactionPhaseSession = session,
+                        tunnelId = null,
+                        deviceProcessId = process.id,
+                        initTime = currentTime(),
+                        delay = 0,
+                        stepRuntime = emptyList(),
+                        state = ProcessState.FINISHED
+                ), session)
+                true
+            } ?: false
+
     fun executeCommand(commandId: String, valueDescriptionId: String, session: String): Boolean? =
-            description.value?.commands?.find { it.id == commandId }?.let { command ->
+            getCommandById(commandId)?.let { command ->
                 DataHolder.instance.entityHolder[command.modbusUnitId]?.takeIf { it is ModbusUnit }?.let { modbusUnit ->
                     (modbusUnit as ModbusUnit).entityClass.description.value?.write?.find { it -> it.id == command.writePointId }?.let { writePoint ->
                         DataHolder.instance.entityFieldHolder[writePoint.commandFieldId]?.takeIf { it is CustomField }?.let {
