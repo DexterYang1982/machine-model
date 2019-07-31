@@ -7,7 +7,19 @@ import net.gridtech.machine.model.ReadCondition
 import net.gridtech.machine.model.entity.Cabin
 
 class CabinDefinitionDescription(private val cabin: Cabin)
-    : IBaseProperty<CabinDefinition, INode>({ parse(it.description) }, CabinDefinition.empty())
+    : IBaseProperty<CabinDefinition, INode>({ parse(it.description) }, CabinDefinition.empty()) {
+
+
+    fun updateEmptyCondition(readCondition: ReadCondition) =
+            value?.let {
+                cabin.updateDescription(it.copy(emptyCondition = readCondition))
+            }
+
+    fun updateExportSingle(exportSingle: Boolean) =
+            value?.let {
+                cabin.updateDescription(it.copy(exportSingle = exportSingle))
+            }
+}
 
 
 data class CabinDefinition(
@@ -17,4 +29,5 @@ data class CabinDefinition(
     companion object {
         fun empty() = CabinDefinition(true, ReadCondition.empty())
     }
+
 }

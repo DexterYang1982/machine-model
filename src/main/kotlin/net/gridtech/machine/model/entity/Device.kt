@@ -65,7 +65,7 @@ class Device(id: String, entityClass: DeviceClass) : IEntity<DeviceClass>(id, en
                         initTime = currentTime(),
                         delay = 0,
                         stepRuntime = emptyList(),
-                        state = ProcessState.FINISHED
+                        state = ProcessState.QUEUED
                 ), session)
                 true
             } ?: false
