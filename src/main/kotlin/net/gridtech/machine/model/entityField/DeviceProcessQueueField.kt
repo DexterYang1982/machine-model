@@ -6,8 +6,8 @@ import net.gridtech.machine.model.IEmbeddedEntityField
 import net.gridtech.machine.model.IEntityClass
 
 
-class DeviceProcessQueueField(entityClass: IEntityClass) : IEmbeddedEntityField<List<TransactionProcess>>(entityClass.id, key) {
-    override fun defaultValue(): List<TransactionProcess> = emptyList()
+class DeviceProcessQueueField(entityClass: IEntityClass) : IEmbeddedEntityField<List<ProcessRuntime>>(entityClass.id, key) {
+    override fun defaultValue(): List<ProcessRuntime> = emptyList()
     override fun autoAddNew(): Boolean = true
     override fun autoInitValue(): Boolean = true
     override fun getFieldKey(): String = key
@@ -25,6 +25,6 @@ class DeviceProcessQueueField(entityClass: IEntityClass) : IEmbeddedEntityField<
         const val key = "process-queue"
     }
 
-    override fun createFieldValue(entityId: String): EntityFieldValue<List<TransactionProcess>> =
-            object : EntityFieldValue<List<TransactionProcess>>(entityId, id, { parse(it.value)!! }) {}
+    override fun createFieldValue(entityId: String): EntityFieldValue<List<ProcessRuntime>> =
+            object : EntityFieldValue<List<ProcessRuntime>>(entityId, id, { parse(it.value)!! }) {}
 }

@@ -28,4 +28,32 @@ class Cabin(id: String, entityClass: CabinClass) : IEntity<CabinClass>(id, entit
                 else
                     null
     }
+
+    fun export(session: String): List<String> {
+        val exportSingle = description.value?.exportSingle == true
+        val storageField = entityClass.storage.getFieldValue(this)
+        val currentStorage = storageField.value?.toMutableList() ?: mutableListOf()
+        return if (currentStorage.isEmpty()) {
+            emptyList()
+        } else {
+            val products =
+                    if (exportSingle) {
+                        val product = currentStorage.removeAt(0)
+                        listOf(product)
+                    } else {
+                        val products = ArrayList(currentStorage)
+                        currentStorage.clear()
+                        products
+                    }
+            storageField.update(currentStorage, session)
+            products
+        }
+    }
+
+    fun import(products: List<String>, session: String) {
+        val storageField = entityClass.storage.getFieldValue(this)
+        val currentStorage = storageField.value?.toMutableList() ?: mutableListOf()
+        currentStorage.addAll(products)
+        storageField.update(currentStorage, session)
+    }
 }

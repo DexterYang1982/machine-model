@@ -9,7 +9,6 @@ import net.gridtech.machine.model.entityClass.DeviceClass
 import net.gridtech.machine.model.entityField.CustomField
 import net.gridtech.machine.model.entityField.ProcessRuntime
 import net.gridtech.machine.model.entityField.ProcessState
-import net.gridtech.machine.model.entityField.TransactionProcess
 import net.gridtech.machine.model.property.entity.DeviceDefinitionDescription
 import net.gridtech.machine.model.property.entity.DeviceProcess
 import net.gridtech.machine.model.property.entity.ModbusRead
@@ -46,6 +45,13 @@ class Device(id: String, entityClass: DeviceClass) : IEntity<DeviceClass>(id, en
     fun getProcessById(processId: String): DeviceProcess? =
             description.value?.processes?.find { process -> process.id == processId }
 
+    fun addNewProcessQueue(processQueue: List<ProcessRuntime>) {
+        val processQueueField = entityClass.processQueue.getFieldValue(this)
+        val currentQueue = processQueueField.value?.toMutableList() ?: mutableListOf()
+        currentQueue.addAll(processQueue)
+        processQueueField.update(currentQueue, processQueue.first().transactionSession)
+    }
+
     fun executeProcess(processId: String, session: String): Boolean? =
             getProcessById(processId)?.let { process ->
                 entityClass.currentProcess.getFieldValue(this).update(ProcessRuntime(
@@ -54,6 +60,7 @@ class Device(id: String, entityClass: DeviceClass) : IEntity<DeviceClass>(id, en
                         transactionSession = null,
                         transactionPhaseSession = session,
                         tunnelId = null,
+                        deviceId = this.id,
                         deviceProcessId = process.id,
                         initTime = currentTime(),
                         delay = 0,

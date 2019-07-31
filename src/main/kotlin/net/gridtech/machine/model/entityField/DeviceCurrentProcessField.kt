@@ -36,10 +36,11 @@ data class ProcessRuntime(
         var transactionSession: String?,
         var transactionPhaseSession: String,
         var tunnelId: String?,
+        var deviceId: String,
         var deviceProcessId: String,
         var stepRuntime: List<StepRuntime>,
         var initTime: Long,
-        var delay:Long,
+        var delay: Long,
         var state: ProcessState
 ) {
     companion object {
@@ -50,20 +51,26 @@ data class ProcessRuntime(
                 "",
                 null,
                 "",
+                "",
                 emptyList(),
                 -1,
                 -1,
                 ProcessState.FINISHED
         )
     }
+
+    fun session(): String =
+            "${transactionSession ?: ""}$transactionPhaseSession"
 }
 
-data class StepRuntime (
-    var stepId: String,
-    var state:StepState
+data class StepRuntime(
+        var stepId: String,
+        var state: StepState,
+        var startTime: Long?,
+        var endTime: Long?
 )
 
-enum class StepState{
+enum class StepState {
     RUNNING,
     ERROR,
     TIMEOUT,

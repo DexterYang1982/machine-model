@@ -30,38 +30,12 @@ class TunnelCurrentTransactionField(entityClass: IEntityClass) : IEmbeddedEntity
 }
 
 data class CurrentTransaction(
-        var transactionSession: String,
         var transactionId: String,
-        var transactionProcesses: List<TransactionProcess>
+        var transactionSession: String,
+        var transactionProcesses: List<ProcessRuntime>
 ) {
     companion object {
         fun empty() = CurrentTransaction("", "", emptyList())
-    }
-}
-
-data class TransactionProcess(
-        var transactionId: String?,
-        var transactionPhaseId: String?,
-        var transactionSession: String?,
-        var transactionPhaseSession: String,
-        var tunnelId: String?,
-        var deviceId: String,
-        var deviceProcessId: String,
-        var initTime: Long,
-        var state: ProcessState
-) {
-    companion object {
-        fun empty() = TransactionProcess(
-                null,
-                null,
-                null,
-                "",
-                null,
-                "",
-                "",
-                -1,
-                ProcessState.FINISHED
-        )
     }
 }
 
