@@ -5,7 +5,6 @@ import net.gridtech.machine.model.EntityFieldValue
 import net.gridtech.machine.model.IEmbeddedEntityField
 import net.gridtech.machine.model.IEntityClass
 
-
 class TunnelCurrentTransactionField(entityClass: IEntityClass) : IEmbeddedEntityField<CurrentTransaction>(entityClass.id, key) {
     override fun defaultValue(): CurrentTransaction = CurrentTransaction.empty()
     override fun autoAddNew(): Boolean = true
@@ -32,10 +31,15 @@ class TunnelCurrentTransactionField(entityClass: IEntityClass) : IEmbeddedEntity
 data class CurrentTransaction(
         var transactionId: String,
         var transactionSession: String,
+        var finishedExportation: Boolean,
         var transactionProcesses: List<ProcessRuntime>
 ) {
     companion object {
-        fun empty() = CurrentTransaction("", "", emptyList())
+        fun empty() = CurrentTransaction(
+                "",
+                "",
+                false,
+                emptyList())
     }
 }
 

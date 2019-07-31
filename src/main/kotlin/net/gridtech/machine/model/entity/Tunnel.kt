@@ -6,6 +6,7 @@ import net.gridtech.machine.model.DataHolder
 import net.gridtech.machine.model.IEntity
 import net.gridtech.machine.model.entityClass.TunnelClass
 import net.gridtech.machine.model.entityField.ProcessRuntime
+import net.gridtech.machine.model.entityField.ProcessState
 import net.gridtech.machine.model.property.entity.TunnelDefinitionDescription
 
 
@@ -40,24 +41,28 @@ class Tunnel(id: String, entityClass: TunnelClass) : IEntity<TunnelClass>(id, en
                         it.state != processRuntime.state
             }
             if (currentProcess != null) {
-                currentTransactionField.update(this.transactionProcesses
-                        .map { if (it == currentProcess) processRuntime else it }
-                        , processRuntime.session())
-
-
-                val transactionPhase = description.value?.transactions?.find { it.id == processRuntime.transactionId }?.phases?.find { it.id == processRuntime.transactionPhaseId }
-                transactionPhase?.exportCabinId?.let { exportCabinId ->
-                    DataHolder.instance.getEntityByIdObservable<Cabin>(exportCabinId).subscribe { exportCabin, _ ->
-                        val products = exportCabin.export(processRuntime.session())
-                        if (products.isNotEmpty()) {
-                            transactionPhase.importCabinId?.let { importCabinId ->
-                                DataHolder.instance.getEntityByIdObservable<Cabin>(importCabinId).subscribe { importCabin, _ ->
-                                    importCabin.import(products, processRuntime.session())
+                if (processRuntime.state == ProcessState.FINISHED) {
+                    val transaction = description.value?.transactions?.find { it.id == processRuntime.transactionId }
+                    val transactionPhase = transaction?.phases?.find { it.id == processRuntime.transactionPhaseId }
+                    transactionPhase?.exportCabinId?.let { exportCabinId ->
+                        DataHolder.instance.getEntityByIdObservable<Cabin>(exportCabinId).subscribe { exportCabin, _ ->
+                            val products = exportCabin.export(processRuntime.session())
+                            if (products.isNotEmpty()) {
+                                if (transaction.targetCabinId == exportCabin.id) {
+                                    finishedExportation = true
+                                }
+                                transactionPhase.importCabinId?.let { importCabinId ->
+                                    DataHolder.instance.getEntityByIdObservable<Cabin>(importCabinId).subscribe { importCabin, _ ->
+                                        importCabin.import(products, processRuntime.session())
+                                    }
                                 }
                             }
                         }
                     }
                 }
+                currentTransactionField.update(this.transactionProcesses
+                        .map { if (it == currentProcess) processRuntime else it }
+                        , processRuntime.session())
             }
         }
     }
