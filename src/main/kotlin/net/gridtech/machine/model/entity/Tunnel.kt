@@ -90,9 +90,10 @@ class Tunnel(id: String, entityClass: TunnelClass) : IEntity<TunnelClass>(id, en
                         }
                     }
                 }
-                currentTransactionField.update(this.transactionProcesses
-                        .map { if (it == currentProcess) processRuntime else it }
-                        , processRuntime.session())
+                currentTransactionField.update(
+                        this.copy(transactionProcesses = this.transactionProcesses
+                                .map { if (it == currentProcess) processRuntime else it }),
+                        processRuntime.session())
             }
         }
     }

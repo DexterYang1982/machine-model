@@ -309,7 +309,7 @@ abstract class IBaseProperty<T, U : IBaseData>(private val castFunction: (raw: U
     }
 
     protected fun publish(t: T) {
-        emitters.forEach {
+        emitters.toList().forEach {
             if (!it.isDisposed)
                 it.onNext(t)
         }
@@ -323,7 +323,7 @@ abstract class IBaseProperty<T, U : IBaseData>(private val castFunction: (raw: U
     }
 
     open fun delete() {
-        emitters.forEach {
+        emitters.toList().forEach {
             if (!it.isDisposed)
                 it.onComplete()
         }

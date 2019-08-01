@@ -49,7 +49,26 @@ class Device(id: String, entityClass: DeviceClass) : IEntity<DeviceClass>(id, en
         val processQueueField = entityClass.processQueue.getFieldValue(this)
         val currentQueue = processQueueField.value?.toMutableList() ?: mutableListOf()
         currentQueue.addAll(processQueue)
-        processQueueField.update(currentQueue, processQueue.first().transactionSession)
+        processNextInQueue(currentQueue)
+    }
+
+    fun finishedCurrentProcess() {
+        val processQueueField = entityClass.processQueue.getFieldValue(this)
+        processNextInQueue(processQueueField.value?.toMutableList() ?: mutableListOf())
+    }
+
+    private fun processNextInQueue(processQueue: MutableList<ProcessRuntime>) {
+        if (processQueue.isNotEmpty()) {
+            val processQueueField = entityClass.processQueue.getFieldValue(this)
+            val currentProcessField = entityClass.currentProcess.getFieldValue(this)
+            var queueSession: String? = null
+            if (currentProcessField.value?.state ?: ProcessState.FINISHED == ProcessState.FINISHED && processQueue.isNotEmpty()) {
+                val nextProcess = processQueue.removeAt(0)
+                currentProcessField.update(nextProcess, nextProcess.session())
+                queueSession = nextProcess.session()
+            }
+            processQueueField.update(processQueue, queueSession)
+        }
     }
 
     fun executeProcess(processId: String, session: String): Boolean? =
