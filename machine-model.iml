@@ -86,13 +86,5 @@
     <orderEntry type="library" exported="" scope="TEST" name="Gradle: okhttp-4.1.0" level="project" />
     <orderEntry type="library" exported="" scope="TEST" name="Gradle: nanohttpd-2.3.1" level="project" />
     <orderEntry type="library" exported="" scope="TEST" name="Gradle: okio-2.2.2" level="project" />
-    <orderEntry type="library" exported="" name="machine-model.machine-model-1.0-SNAPSHOT" level="project" />
-    <orderEntry type="library" exported="" name="machine-model.machine-model-1.0-SNAPSHOT" level="project" />
-    <orderEntry type="library" exported="" name="machine-model.machine-model-1.0-SNAPSHOT" level="project" />
-    <orderEntry type="library" exported="" name="machine-model.machine-model-1.0-SNAPSHOT" level="project" />
-    <orderEntry type="library" exported="" name="machine-model.machine-model-1.0-SNAPSHOT" level="project" />
-    <orderEntry type="library" exported="" name="machine-model.machine-model-1.0-SNAPSHOT" level="project" />
-    <orderEntry type="library" exported="" name="machine-model.machine-model-1.0-SNAPSHOT" level="project" />
-    <orderEntry type="library" exported="" name="machine-model.machine-model-1.0-SNAPSHOT" level="project" />
   </component>
 </module>
