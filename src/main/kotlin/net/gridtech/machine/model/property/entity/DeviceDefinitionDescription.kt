@@ -127,7 +127,7 @@ data class DeviceProcessStep(
         var id: String,
         var name: String,
         var executeCondition: ReadCondition,
-        var execute: EntityWrite?,
+        var writes: List<EntityWrite>,
         var endCondition: ReadCondition,
         var timeout: Long
 )
