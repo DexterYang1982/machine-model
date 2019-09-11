@@ -60,6 +60,7 @@ data class Trigger(
         var id: String,
         var name: String,
         var condition: ReadCondition,
+        var timeout:Long,
         var delay: Long,
         var writes: List<EntityWrite>
 )
