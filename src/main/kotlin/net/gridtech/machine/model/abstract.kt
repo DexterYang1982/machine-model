@@ -44,31 +44,33 @@ abstract class IBaseStructure<T : IStructureData>(val id: String) {
     open fun path(): List<String> = emptyList()
 
     fun capsule() = StructureDataUpdateCapsule(
-            id = id,
-            dataName = dataName(),
-            dataType = dataType(),
-            updateType = "update",
-            content = stringfy(mapOf(
-                    "id" to id,
-                    "name" to name.value,
-                    "alias" to alias.value,
-                    "description" to description?.value,
-                    "nodeClassId" to nodeClassId(),
-                    "parentId" to parentId(),
-                    "path" to path()
-            )),
-            updateTime = source?.updateTime ?: -1
+        id = id,
+        dataName = dataName(),
+        dataType = dataType(),
+        updateType = "update",
+        content = stringfy(
+            mapOf(
+                "id" to id,
+                "name" to name.value,
+                "alias" to alias.value,
+                "description" to description?.value,
+                "nodeClassId" to nodeClassId(),
+                "parentId" to parentId(),
+                "path" to path()
+            )
+        ),
+        updateTime = source?.updateTime ?: -1
     )
 
     fun updateNameAndAlias(name: String, alias: String) =
-            source?.let {
-                update(name, alias, description?.value)
-            }
+        source?.let {
+            update(name, alias, description?.value)
+        }
 
     fun updateDescription(description: Any?) =
-            source?.let {
-                update(it.name, it.alias, description)
-            }
+        source?.let {
+            update(it.name, it.alias, description)
+        }
 
     fun delete() {
         name.delete()
@@ -77,18 +79,18 @@ abstract class IBaseStructure<T : IStructureData>(val id: String) {
     }
 
     fun onDelete(): Single<*> = DataHolder.instance.structureDataChangedPublisher
-            .filter { (type, structure) ->
-                type == StructureDataChangedType.DELETE && structure.id == id
-            }.firstOrError()
+        .filter { (type, structure) ->
+            type == StructureDataChangedType.DELETE && structure.id == id
+        }.firstOrError()
 
     abstract fun doDelete()
 
     fun tryToDelete(): Boolean =
-            source?.let {
-                APIExceptionEnum.ERR10_CAN_NOT_BE_DELETED.assert(DataHolder.instance.checkDependency(id))
-                doDelete()
-                true
-            } ?: false
+        source?.let {
+            APIExceptionEnum.ERR10_CAN_NOT_BE_DELETED.assert(DataHolder.instance.checkDependency(id))
+            doDelete()
+            true
+        } ?: false
 }
 
 abstract class IEntityClass(id: String) : IBaseStructure<INodeClass>(id) {
@@ -111,18 +113,18 @@ abstract class IEntityClass(id: String) : IBaseStructure<INodeClass>(id) {
     }
 
     fun getCustomFields(): List<CustomField> =
-            DataHolder.instance.entityFieldHolder.values.filter {
-                it.source?.nodeClassId == id && it is CustomField
-            }.map { cast<CustomField>(it)!! }
+        DataHolder.instance.entityFieldHolder.values.filter {
+            it.source?.nodeClassId == id && it is CustomField
+        }.map { cast<CustomField>(it)!! }
 
     protected fun addNew(name: String, alias: String, tags: List<String>, connectable: Boolean): INodeClass? {
         return DataHolder.instance.manager?.nodeClassAdd(
-                id = id,
-                name = name,
-                alias = alias,
-                connectable = connectable,
-                tags = tags.toMutableList().apply { add(DataHolder.instance.domainNodeInfo.nodeId) },
-                description = description?.value
+            id = id,
+            name = name,
+            alias = alias,
+            connectable = connectable,
+            tags = tags.toMutableList().apply { add(DataHolder.instance.domainNodeInfo.nodeId) },
+            description = description?.value
         )?.apply {
             embeddedFields.forEach { field ->
                 if (field.autoAddNew())
@@ -133,10 +135,10 @@ abstract class IEntityClass(id: String) : IBaseStructure<INodeClass>(id) {
 
     override fun update(name: String, alias: String, description: Any?) {
         DataHolder.instance.manager?.nodeClassUpdate(
-                id = id,
-                name = name,
-                alias = alias,
-                description = description
+            id = id,
+            name = name,
+            alias = alias,
+            description = description
         )
     }
 
@@ -153,22 +155,32 @@ abstract class IEntityField<T>(id: String) : IBaseStructure<IField>(id) {
     abstract fun createFieldValue(entityId: String): EntityFieldValue<T>
 
     companion object {
-        fun addNew(key: String, nodeClassId: String, name: String, alias: String, tags: List<String>, through: Boolean, description: Any?): IField? =
-                DataHolder.instance.manager?.fieldAdd(
-                        key = key,
-                        nodeClassId = nodeClassId,
-                        name = name,
-                        alias = alias,
-                        through = through,
-                        tags = tags,
-                        description = description
-                )
+        fun addNew(
+            key: String,
+            nodeClassId: String,
+            name: String,
+            alias: String,
+            tags: List<String>,
+            through: Boolean,
+            description: Any?
+        ): IField? =
+            DataHolder.instance.manager?.fieldAdd(
+                key = key,
+                nodeClassId = nodeClassId,
+                name = name,
+                alias = alias,
+                through = through,
+                tags = tags,
+                description = description
+            )
     }
 
-    fun getFieldValue(entity: IEntity<*>): EntityFieldValue<T> {
-        val fieldValueId = compose(entity.id, id)
+    fun getFieldValue(entity: IEntity<*>): EntityFieldValue<T> = getFieldValue(entity.id)
+
+    fun getFieldValue(entityId: String): EntityFieldValue<T> {
+        val fieldValueId = compose(entityId, id)
         return cast(DataHolder.instance.entityFieldValueHolder.getOrPut(fieldValueId) {
-            createFieldValue(entity.id).apply {
+            createFieldValue(entityId).apply {
                 source = DataHolder.instance.bootstrap.fieldValueService.getById(fieldValueId)
             }
         })!!
@@ -176,10 +188,10 @@ abstract class IEntityField<T>(id: String) : IBaseStructure<IField>(id) {
 
     override fun update(name: String, alias: String, description: Any?) {
         DataHolder.instance.manager?.fieldUpdate(
-                id = id,
-                name = name,
-                alias = alias,
-                description = description
+            id = id,
+            name = name,
+            alias = alias,
+            description = description
         )
     }
 
@@ -190,7 +202,8 @@ abstract class IEntityField<T>(id: String) : IBaseStructure<IField>(id) {
 
 }
 
-abstract class IEmbeddedEntityField<T>(private val nodeClassId: String, private val key: String) : IEntityField<T>(compose(nodeClassId, key)) {
+abstract class IEmbeddedEntityField<T>(private val nodeClassId: String, private val key: String) :
+    IEntityField<T>(compose(nodeClassId, key)) {
     override fun dataName(): String = "EmbeddedField"
     open fun defaultValue(): T? = null
     open fun autoAddNew(): Boolean = false
@@ -201,9 +214,9 @@ abstract class IEmbeddedEntityField<T>(private val nodeClassId: String, private 
     }
 
     fun setDefaultValueToEntity(entityId: String) =
-            defaultValue()?.apply {
-                createFieldValue(entityId).update(this as Any)
-            }
+        defaultValue()?.apply {
+            createFieldValue(entityId).update(this as Any)
+        }
 }
 
 abstract class IEntity<T : IEntityClass>(id: String, val entityClass: T) : IBaseStructure<INode>(id) {
@@ -213,22 +226,24 @@ abstract class IEntity<T : IEntityClass>(id: String, val entityClass: T) : IBase
     override fun path(): List<String> = source?.path ?: emptyList()
 
 
-    protected fun addNew(parentId: String,
-                         name: String,
-                         alias: String,
-                         tags: List<String>,
-                         externalNodeIdScope: List<String>,
-                         externalNodeClassTagScope: List<String>): INode? {
+    protected fun addNew(
+        parentId: String,
+        name: String,
+        alias: String,
+        tags: List<String>,
+        externalNodeIdScope: List<String>,
+        externalNodeClassTagScope: List<String>
+    ): INode? {
         return DataHolder.instance.manager?.nodeAdd(
-                id = id,
-                nodeClassId = entityClass.id,
-                name = name,
-                alias = alias,
-                parentId = parentId,
-                externalNodeIdScope = externalNodeIdScope,
-                externalNodeClassTagScope = externalNodeClassTagScope,
-                tags = tags,
-                description = description?.value
+            id = id,
+            nodeClassId = entityClass.id,
+            name = name,
+            alias = alias,
+            parentId = parentId,
+            externalNodeIdScope = externalNodeIdScope,
+            externalNodeClassTagScope = externalNodeClassTagScope,
+            tags = tags,
+            description = description?.value
         )?.apply {
             entityClass.embeddedFields.forEach { field ->
                 if (field.autoInitValue())
@@ -238,15 +253,15 @@ abstract class IEntity<T : IEntityClass>(id: String, val entityClass: T) : IBase
     }
 
     fun getCustomFieldValue(fieldId: String): EntityFieldValue<ValueDescription>? =
-            cast<CustomField>(DataHolder.instance.entityFieldHolder[fieldId])?.getFieldValue(this)
+        cast<CustomField>(DataHolder.instance.entityFieldHolder[fieldId])?.getFieldValue(this)
 
 
     override fun update(name: String, alias: String, description: Any?) {
         DataHolder.instance.manager?.nodeUpdate(
-                id = id,
-                name = name,
-                alias = alias,
-                description = description
+            id = id,
+            name = name,
+            alias = alias,
+            description = description
         )
     }
 
@@ -255,7 +270,8 @@ abstract class IEntity<T : IEntityClass>(id: String, val entityClass: T) : IBase
     }
 }
 
-abstract class IBaseProperty<T, U : IBaseData>(private val castFunction: (raw: U) -> T, initValue: T? = null) : ObservableOnSubscribe<T> {
+abstract class IBaseProperty<T, U : IBaseData>(private val castFunction: (raw: U) -> T, initValue: T? = null) :
+    ObservableOnSubscribe<T> {
     private var emitters = mutableListOf<ObservableEmitter<T>>()
     private var lastParseTime: Long = -1
     protected var v: T? = initValue
@@ -331,7 +347,8 @@ abstract class IBaseProperty<T, U : IBaseData>(private val castFunction: (raw: U
     }
 }
 
-open class EntityFieldValue<T>(val nodeId: String, val fieldId: String, castFunction: (raw: IFieldValue) -> T) : IBaseProperty<T, IFieldValue>(castFunction) {
+open class EntityFieldValue<T>(val nodeId: String, val fieldId: String, castFunction: (raw: IFieldValue) -> T) :
+    IBaseProperty<T, IFieldValue>(castFunction) {
     val session: String
         get() = source?.session ?: ""
     val updateTime: Long
@@ -340,14 +357,15 @@ open class EntityFieldValue<T>(val nodeId: String, val fieldId: String, castFunc
     override fun publishWhenSourceUpdate(): Boolean = true
 
     fun update(v: Any, session: String? = null) =
-            DataHolder.instance.bootstrap.fieldValueService.setFieldValue(
-                    nodeId,
-                    fieldId,
-                    if (v is String)
-                        v
-                    else
-                        stringfy(v),
-                    session)
+        DataHolder.instance.bootstrap.fieldValueService.setFieldValue(
+            nodeId,
+            fieldId,
+            if (v is String)
+                v
+            else
+                stringfy(v),
+            session
+        )
 
 }
 
@@ -357,10 +375,10 @@ interface IDependOnOthers {
 }
 
 data class StructureDataUpdateCapsule(
-        var id: String,
-        var dataName: String,
-        var dataType: String,
-        var updateType: String,
-        var content: String,
-        var updateTime: Long
+    var id: String,
+    var dataName: String,
+    var dataType: String,
+    var updateType: String,
+    var content: String,
+    var updateTime: Long
 )
