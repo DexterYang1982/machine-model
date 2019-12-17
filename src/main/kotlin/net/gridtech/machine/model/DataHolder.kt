@@ -153,14 +153,16 @@ class DataHolder(val bootstrap: Bootstrap, val manager: IManager? = null) {
                     }.map { it.second as IEntityField<*> }
             )
 
-    fun <T : IEntity<*>> getEntityByIdObservable(id: String): Single<T> =
+    fun <T : IEntity<*>> getEntityByIdObservable(id: String): Observable<T> =
             entityHolder[id]
                     ?.let { entity ->
-                        Single.just(cast<T>(entity)!!)
+                        Observable.just(cast<T>(entity)!!)
                     }
                     ?: structureDataChangedPublisher.filter {
                         it.first == StructureDataChangedType.ADD && it.second is IEntity<*> && it.second.id == id
-                    }.map { cast<T>(it)!! }.singleOrError()
+                    }.map {
+                        cast<T>(it.second)!!
+                    }
 
     private fun createEntityClass(nodeClass: INodeClass): IEntityClass? = null
             ?: RootClass.create(nodeClass)

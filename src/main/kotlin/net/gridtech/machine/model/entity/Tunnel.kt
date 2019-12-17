@@ -75,14 +75,14 @@ class Tunnel(id: String, entityClass: TunnelClass) : IEntity<TunnelClass>(id, en
                     val transaction = description.value?.transactions?.find { it.id == processRuntime.transactionId }
                     val transactionPhase = transaction?.phases?.find { it.id == processRuntime.transactionPhaseId }
                     transactionPhase?.exportCabinId?.let { exportCabinId ->
-                        DataHolder.instance.getEntityByIdObservable<Cabin>(exportCabinId).subscribe { exportCabin, _ ->
+                        DataHolder.instance.getEntityByIdObservable<Cabin>(exportCabinId).subscribe { exportCabin->
                             val products = exportCabin.export(processRuntime.session())
                             if (products.isNotEmpty()) {
                                 if (transaction.targetCabinId == exportCabin.id) {
                                     finishedExportation = true
                                 }
                                 transactionPhase.importCabinId?.let { importCabinId ->
-                                    DataHolder.instance.getEntityByIdObservable<Cabin>(importCabinId).subscribe { importCabin, _ ->
+                                    DataHolder.instance.getEntityByIdObservable<Cabin>(importCabinId).subscribe { importCabin->
                                         importCabin.import(products, processRuntime.session())
                                     }
                                 }
